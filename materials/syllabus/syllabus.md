@@ -2,14 +2,14 @@
 title: "AGEC 652 - Application of Quantitative Analysis: Mathematical Programming"
 subtitle: Spring 2022 - Tuesdays and Thursdays 9:00--10:15 AM, Rawls Hall 1071
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 geometry: margin=1in
 fontfamily: palatino
 fontsize: 11pt
 ---
 
-*This syllabus is subject to change. You will be notified of any changes as far in advance as possible. Please monitor your Purdue email and Brightspace for updates. This version was updated on Jan. 9, 2022. *
+*This syllabus is subject to change. You will be notified of any changes as far in advance as possible. Please monitor your Purdue email and Brightspace for updates. This version was created on Jan. 10, 2022. *
 
 --------------------
 
@@ -54,7 +54,7 @@ Familiarity with computer programming is desirable. In addition, some of the app
 
 ## Readings
 
-This course will be based on lecture notes and select research papers. Course materials and references to research papers will be posted on the course website. 
+This course will be based on lecture notes/slides and select research papers. Course materials and references to research papers will be posted on the course website. 
 
 The second part of the course will be closely related to select chapters from textbooks listed below. While there is no mandatory textbook for this course, I recommend that you consult these references for a deeper understanding of the methods we review in class with limited time.
 
@@ -130,7 +130,7 @@ A paper of this type must:
 
 A paper proposal of 1-2 pages is due March 11. This proposal should outline the items above (except for preliminary results).
 
-Term papers must be submitted by May 6. The term paper should have a 12-point font, double spacing, 1-inch margins, and a maximum length of 15 pages (excluding tables, graphs, and appendices).
+Term papers must be submitted by May 6. The term paper should have a 12-point font, double spacing, 1-inch margins, and a maximum length of 15 pages (excluding tables, graphs, and appendices). Further instructions on how to submit the term paper will be posted on the course website later in the semester.
 
 
 --------------------
