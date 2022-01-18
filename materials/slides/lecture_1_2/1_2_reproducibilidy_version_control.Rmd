@@ -618,11 +618,12 @@ In your own repository do the following:
 
 Did the changes show up your repo's GitHub page?
 
+
 ---
 
 ## Using Git: branching
 
-Some more (but not very) advanced operations relate to **branching**
+Some more (but not very) advanced operations relate to **branching** and **pull requests**
 
 Branching creates different, but parallel, versions of your code
 - If you want to test out a new feature of your model but don't want to contaminate your `main` branch, create a new branch and add the feature there
@@ -676,6 +677,87 @@ In your own repository do the following:
 9. Check your repo's GitHub page
 
 ---
+
+## Pull requests
+
+- The branch + merge we just did is the standard workflow if you are working alone
+
+- When you are working with collaborators, before merging it is *best to announce first* that you have finished the branch or completed a new feature
+
+- This is done with a **pull request**
+
+--
+
+- In practice, this is also a way to group a bunch of commits into a single new feature and let others know about it
+
+---
+
+## Pull requests
+
+Once you have committed and pushed changes to a branch, you create a new pull request on GitHub Desktop...
+
+<div align="center">
+  <img src="figures/pull_request_1a.png" height=450>
+</div>
+
+---
+
+## Pull requests
+
+...or on the GitHub website
+
+<div align="center">
+  <img src="figures/pull_request_1b.png" height=450>
+</div>
+
+---
+
+## Pull requests
+
+Enter a description and assign any reviewers
+
+<div align="center">
+  <img src="figures/pull_request_2.png" height=450>
+</div>
+
+---
+
+## Pull requests
+
+Once you and your collaborators are happy with it, just go ahead and `merge pull request`
+
+<div align="center">
+  <img src="figures/pull_request_3.png" height=450>
+</div>
+
+---
+
+
+## Pull requests
+
+And you're done!
+
+<div align="center">
+  <img src="figures/pull_request_4.png" height=450>
+</div>
+
+---
+
+
+#.blue[Your turn!]
+
+In your own repository do the following:
+
+1. Switch back to `test-branch`
+2. Create a new file called `new_feature.jl` and write anything in it
+3. Commit and push the changes with the message "Adding new feature"
+4. Create a pull request and add "New feature" as a description
+  - (Here is where you and collaborators would discuss/agree)
+5. Go ahead and "Merge pull request"
+
+
+---
+
 
 #.blue[Team up]
 
@@ -781,132 +863,307 @@ Merge conflicts can be fixed by directly editing the file. Then `Continue merge`
 </div>
 
 
+---
+class:inverse,center,middle
+
+# Let's get back to Gentzkow and Shapiro's rules
 
 ---
 
+## Version control
+
+**Store code and data under version control**
+
+- Now you know how to do that with Git(Hub)
+- But I don't recommend using it for large data sets
+  - Might actually be impossible because GitHub sets a strict size limit of 100 MB per file
+  - For large data, use Dropbox/OneDrive/Box
+
+--
+
+**Run the whole directory before checking it back in**
+
+- In other words: *avoid committing a version with bugs or that breaks other code in your project*
+
+
+---
+
+## Management
+
+**Manage tasks with a task management system**
+
+**E-mail is not a task management system**
+
+- You can do that in GitHub!
+  - With the added benefit that you can easily link changes to tasks (we'll that in a bit) 
+
+- But there are many other tools
+  - Some examples: Asana, Trello, Notion, and even Outlook tasks 
+
+
+---
+
+
+## Managing tasks and workflow with GitHub
+
+GitHub is also very useful for task management in solo or group projects using **issues** and **pull requests**
+
+**Issues**: task management for you and your collaborators
+- It should be able to completely replace email
+  - With the added benefit of organizing your discussions and decisions by topic
+
+--
+
+Let's look at the issues for the `Optim` package in Julia
+
+---
+
+## Issues
+
+<div style="float: right">
+  <img src="figures/issues_1.png" height=280>
+</div>
+
+- The issues tab reports a list of 56 open issues (286 closed, i.e., task or problem has been solved)
+
+- Each issue has its own title
+
+- Let's one example of issue
+
+---
+
+## Issues
+
+<div style="float: right">
+  <img src="figures/issues_2.png" height=400>
+</div>
+
+One person reported issues with the documentation of a function, which does not match the actual function
+
+Someone else has responded with some feedback
+
+---
+
+## Issues
+
+It is easy to creat a new task or *issue*: from the issues tab, click the green **new issue** button which takes you here
+
+<div align = "center">
+  <img src="figures/issues_3.png" height=400>
+</div>
+
+
+---
+
+## Issues
+
+<div style="float: right">
+  <img src="figures/issues_4.png" height=330>
+</div>
+
+Then you can
+- Add a title
+- Add a description
+- Assign the task to a collaborator
+- Add labels/tags
+
+---
+
+## Issues
+
+The issue keeps track of the history of everything that's happened to it
+
+<div align = "center">
+  <img src="figures/issues_5.png" height=430>
+</div>
+
+
+---
+
+## Issues
+
+You can reference people with `@` which brings up a dropdown menu of all collaborators on the project
+
+<div align = "center">
+  <img src="figures/issues_6.png" height=430>
+</div>
+
+---
+
+## Issues
+
+You can also reference *other issues* if they're related by using `#` which brings up a dropdown of all issues for your repository
+
+<div align = "center">
+  <img src="figures/issues_7.png" height=350>
+</div>
+
+
+---
+
+## Issues
+
+Issues can also be referenced in your commits to your project by adding `#issue_number_here` to the commit message
+
+<div align = "center">
+  <img src="figures/issues_8.png" height=350>
+</div>
+
+---
+
+## Issues
+
+Then those commits show up in your issue so you have a history of what code changes have been made
+
+<div align = "center">
+  <img src="figures/issues_9.png" height=430>
+</div>
+
+
+
+---
+
+## Issues
+
+
+If you click on the commit, it takes you to the `git diff` which shows you any changes to files made in that commit
+
+<div align = "center">
+  <img src="figures/issues_10.png" height=430>
+</div>
+
+
+
+---
+class: inverse, center, middle
+name: faq
+
+# Git FAQ
+
+---
+
+## FAQ
+
+**Q: When should I commit (and push) changes?**
+
+*A: Early and often*
+
+- It's not quite as important as saving your work regularly, but it's a close second
+- You should certainly push everything that you want your collaborators to see
+
+---
+
+## FAQ
+
+**Q: Do I need branches if I am working on a solo project?**
+
+*A: You don't really need them, but they offer big advantages in maintaining a sane workflow*
+
+- Experiment without any risk to the main project!
+
+---
+
+## FAQ 
+
+**Q: What's the difference between cloning and forking a repo?**
+
+*A: Cloning directly ties your local version to the original repo, while forking creates a copy on your GitHub (which you can then clone)*
+- [Cloning](http://happygitwithr.com/clone.html) makes it easier to fetch updates (and is often the best choice for new GitHub users), but [forking](http://happygitwithr.com/fork.html) has advantages too.
+
+---
+
+## FAQ 
+
+**Q: What happens when something goes wrong?**
+
+*A: Look for help*
+- Command line-based fixes: [ohshitgit.com](http://ohshitgit.com)
+- Also, search on [Stack Exchange](https://stackexchange.com)
+  
+---
+
+## FAQ 
+
+**Q: What happens when something goes <i>horribly</i> wrong?**
+*A: Burn it down and start again:* [http://happygitwithr.com/burn.html](http://happygitwithr.com/burn.html)
+
+<div style="float: right">
+  <img src="figures/xkcd_git.png" height=350>
+</div>
+
+- This is a great advantage of Git's distributed nature:
+  - If something goes horribly wrong, there's usually an intact version somewhere else
+
+---
+
+class: inverse, center, middle
+name: faq
+
+# Appendix
+## Submitting problem sets with GitHub Classroom
+
+---
+
+## Problem set submission
+
+- We'll use our problem sets to get familiarized with GitHub workflow
+- For each problem set, you will receive an invitation
+- After you accept the invitation, GitHub will create a new private repository
+  - Only you and Diego will be able to see its content
+--
+
+- GitHub will automatically create a *pull request* called **Feedback**
+  - This is where I'll write any feedback I might have for your submission
+
+---
+
+## Problem set submission
+
+
+This is what you should see after you accept an assignment invitation
+
+<div align = "center">
+  <img src="figures/test_ps.png" height=430>
+</div>
+
+
+---
+
+
+## Problem set submission
+
+Following the repository link, you'll see that it is pre-populated with any necessary files and instructions
+
+<div align = "center">
+  <img src="figures/test_ps_2.png" height=430>
+</div>
+
+
+---
+
+## Problem set submission
+
+And this is what the **Feedback** pull request page will look like after your first commit
+
+<div align = "center">
+  <img src="figures/test_ps_3.png" height=430>
+</div>
+
+
+---
+
+
 #.blue[Next class]
 
-We'll wrap up looking at GitHub features then jump into coding with Julia
+We'll jump into coding with Julia
 
 **Before next class, please:**
 
-1. Send me your GitHub username and accept invitation
-2. Follow the instructions from [Quant Econ Lecture 1](https://julia.quantecon.org/getting_started_julia/getting_started.html) to install Julia, Jupyter, and Visual Studio (VS) code on your laptop
-3. Do a test run: go back to Example 2 from our previous lecture and solve the equilibrium price for $q^*=1.5$
-  - Just copy & paste the code from slides 35 and 36 and change that `-2` in the first line for `-1.5`
+1. Follow the instructions from [Quant Econ Lecture 1](https://julia.quantecon.org/getting_started_julia/getting_started.html) to install Julia, Jupyter, and Visual Studio (VS) code on your laptop
+2. Do a test run: follow the instructions on the "Test Problem Set" assignment on GitHub Classroom
+  - Solve the equilibrium price for $q^*=1.5$
+  - Write down the answer and commit/submit
 
 
-<!-- --- -->
-<!-- ## Managing tasks and workflow -->
 
-<!-- GitHub is also very useful for task management in solo or group projects using .hi-blue[issues] and .hi-red[pull requests] -->
-
-<!-- **Issues**: task management for you and your collaborators -->
-<!-- - It should be able to completely replace email -->
-
-<!-- -- -->
-
-<!-- Let's look at the issues for the `Optim` package in Julia -->
-
-<!-- --- -->
-
-<!-- ## Issues -->
-
-<!-- <div style="float: right"> -->
-<!--   <img src="figures/issues_1.png" height=280> -->
-<!-- </div> -->
-
-<!-- - The issues tab reports a list of 56 open issues (286 closed, i.e., task or problem has been solved) -->
-
-<!-- - Each issue has its own title -->
-
-<!-- - Let's one example of issue -->
-
-<!-- --- -->
-
-<!-- # Issues -->
-
-<!-- <div style="float: right"> -->
-<!--   <img src="figures/issues_2.png" height=400> -->
-<!-- </div> -->
-
-<!-- One person reported issues with the documentation of a function, which does not match the actual function -->
-
-<!-- Someone else has responded with some feedback -->
-
-<!-- --- -->
-
-<!-- # Issues -->
-
-<!-- <div style="float: right"> -->
-<!--   <img src="figures/issues_3.png" height=450> -->
-<!-- </div> -->
-
-<!-- From the issues tab, click the green **new issue** button which takes you here -->
-
-<!-- You can: -->
-<!-- - create a title -->
-<!-- - add some text for the body of the issue -->
-<!-- - select people to assign the issue to -->
-<!-- - add some labels -->
-
-<!-- --- -->
-
-<!-- # Issues -->
-
-<!-- <div style="float: right"> -->
-<!--   <img src="figures/issues_4.png" height=550> -->
-<!-- </div> -->
-
-<!-- The issue keeps track of the history of everything that's happened to it -->
-
-<!-- --- -->
-
-<!-- # Issues -->
-
-<!-- <div style="float: right"> -->
-<!--   <img src="figures/issues_5.png" height=550> -->
-<!-- </div> -->
-
-<!-- You can reference people with `@` which brings up a dropdown menu of all collaborators on the project -->
-
-<!-- --- -->
-
-<!-- # Issues -->
-
-<!-- <div style="float: right"> -->
-<!--   <img src="figures/issues_6.png" height=550> -->
-<!-- </div> -->
-
-<!-- You can also reference *other issues* if they're related by using `#` which brings up a dropdown of all issues for your repository -->
-
-<!-- --- -->
-
-<!-- # Issues -->
-
-<!-- Issues can also be referenced in your commits to your project by adding `#issue_number_here` to the commit message -->
-
-<!-- <div align = "center"> -->
-<!--   <img src="figures/issues_7.png" height=350> -->
-<!-- </div> -->
-
-<!-- --- -->
-
-<!-- # Issues -->
-
-<!-- <div style="float: right"> -->
-<!--   <img src="figures/issues_8.png" height=550> -->
-<!-- </div> -->
-
-<!-- Then those commits show up in your issue so you have a history of what code changes have been made. -->
-
-<!-- --- -->
-
-<!-- # Issues -->
-
-
-<!-- If you click on the commit, it takes you to the `git diff` which shows you any changes to files made in that commit -->
-
-<!-- <div align = "center"> -->
-<!--   <img src="figures/issues_9.png"> -->
-<!-- </div> -->
+  
