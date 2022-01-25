@@ -43,7 +43,7 @@ style_mono_accent(
   colors = c(
     red = "#f34213",
     gold = "#CFB991",
-    gray = "CFB991",
+    gray = "#C0C0C0",
     blue = "#295fbe",
     black = "#000000"
   )
@@ -846,9 +846,25 @@ Use this (and the compact nested loop) sparingly since it's hard to follow
 
 ---
 
+## Vectorization
+
+Iterated operations element by element is usually an inefficient approach
+
+Another way is to do operations over an entire array. This is called **vectorization**
+
+<div style="float: right">
+  <img src="figures/vectorization.png" height=250>
+</div>
+
+- .small[It's faster because your processor can do some operations over multiple values with one instruction]
+- .small[We'll get a better idea next lecture when we review the basics of computer architecture]
+
+
+---
+
 ## Dot syntax: broadcasting/vectorization
 
-Vectorizing operations (i.e. applying it to a whole array or vector at once) is easy in Julia: just use *dot syntax* (like in MATLAB)
+Vectorizing operations is easy in Julia: just use *dot syntax* (like in MATLAB)
 
 --
 
@@ -861,13 +877,12 @@ squared_2 = g.(1:2:11)
 
 This is actually called **broadcasting** in Julia
 
---
-
-When broadcasting, you might want to consider **pre-allocating** arrays
 
 ---
 
 ## Dot syntax: broadcasting/vectorization
+
+When broadcasting, you might want to consider **pre-allocating** arrays
 
 Vectorization creates *temporary allocations*: temporary arrays in the middle of the process that aren't actually needed for the final product
 
@@ -922,7 +937,7 @@ Full vectorization using `@.` is 10x faster with 1/6 of the memory allocation
 
 ---
 
-## Dot syntax: vectorization
+## Dot syntax: broadcasting/vectorization
 
 Not pre-allocated:
 
@@ -934,7 +949,7 @@ z = rand(length(y));     # input z
 
 ---
 
-## Dot syntax
+## Dot syntax: broadcasting/vectorization
 
 Here we are vectorizing the *function call*
 
@@ -944,634 +959,534 @@ h(1,2);
 ```
 
 ```{julia}
-@time out_1 = h.(y,z)    # evaluate h.(y,z) and time
+@time h_out_1 = h.(y,z)    # evaluate h.(y,z) and time
 ```
 
 ---
-## Dot syntax: vectorization
+## Dot syntax: broadcasting/vectorization
 
 Here we are vectorizing the *function call* **and** *assignment*
 
 ```{julia, results = 'hide'}
-out_2 = similar(out_1) # This pre-alocates memory for an object of the same type and size
+h_out_2 = similar(h_out_1) # This pre-alocates memory for an object of the same type and size
 ```
 
 ```{julia}
-@time out_2 .= h.(y,z)
+@time h_out_2 .= h.(y,z)
 ```
 
 ---
-## Dot syntax: vectorization
+## Dot syntax: broadcasting/vectorization
 
-Here we are vectorizing the *function call* **and** *assignment* **and** *operations*
+Here we are vectorizing the *function call* **and** *assignment* **and** even the *operations* inside the function
 
 ```{julia, results = 'hide'}
-out_3 = similar(out_1)
+h_out_3 = similar(h_out_1)
 ```
 ```{julia}
-@time @. out_3 = h(y,z)
+@time @. h_out_3 = h(y,z)
 ```
 
-<!-- Include an explanation of what's happening with this example: https://docs.julialang.org/en/v1/manual/performance-tips/#More-dots:-Fuse-vectorized-operations -->
+---
 
-<!-- --- -->
+## Dot syntax: broadcasting/vectorization
 
+The `@.` macro saves us from typing a bunch of `.`
 
-<!-- # Scope -->
+```{julia, results = 'hide'}
+h_vec(y,z) = y.^2 + sin.(z); h_vec(1,2); h_out_4 = similar(h_out_1)
+```
+```{julia}
+@time h_out_4 .= h.(y,z)
+```
 
 
-<!-- The .hi-blue[scope] of a variable name determines when it is valid to refer to it -->
+---
 
-<!-- -- -->
+## Scope
 
-<!-- Scope can be a frustrating concept -->
 
-<!-- -- -->
+The **scope** of a variable name determines when it is valid to refer to that variable
+  - E.g.: if you create a variable inside a function, can you reference that variable outside the function?
+  - You can think of scope as different contexts within your program
 
-<!-- If you want to dive into the details: the type of scoping in Julia is called **lexical scoping** -->
+--
+  
+The two basic scopes are **local** and **global**
 
-<!-- -- -->
+--
 
-<!-- Different scopes can have the same name, i.e. `saving_rate`, but be assigned to different variables -->
+Scope can be a frustrating concept to grasp at first. But understanding how scopes work can save you a lot of debugging time
 
-<!-- -- -->
+--
 
-<!-- Let's walk through some simple examples to see how it works -->
+Let's walk through some simple examples to see how it works
 
-<!-- --- -->
+---
 
-<!-- # Scope -->
+## Scope
 
-<!-- First, functions have their own local scope -->
+First, functions have their own **local scope**
 
-<!-- -- -->
+--
 
-<!-- ```{julia} -->
-<!-- ff(xx) = xx^2; -->
-<!-- yy = 5; -->
-<!-- ff(yy) -->
-<!-- ``` -->
+```{julia}
+ff(xx) = xx^2;
+yy = 5;
+ff(yy)
+```
 
-<!-- `xx` isn't bound to any values outside the function `ff` -->
+`xx` isn't bound to any values outside the function `ff`
+- It is only used inside the function
 
-<!-- This is pretty natural for those of you who have done any programming before -->
 
-<!-- --- -->
-<!-- # Scope -->
+---
+## Scope
 
-<!-- Locally scoped functions allow us to do things like: -->
+Locally scoped functions allow us to do things like:
 
-<!-- ```{julia} -->
-<!-- xx = 10; -->
-<!-- fff(xx) = xx^2; -->
-<!-- fff(5) -->
-<!-- ``` -->
+```{julia}
+xx = 10;
+fff(xx) = xx^2;
+fff(5)
+```
 
-<!-- Although `xx` was declared equal to 10, the function still evaluated at 5 -->
+--
 
-<!-- -- -->
+Although `xx` was declared equal to 10 *outside the function*, the function still evaluated `xx` within its own scope at 5 (the value passed as argument)
 
-<!-- This is all kind of obvious so far -->
+---
 
-<!-- --- -->
+## Scope
 
-<!-- # Scope -->
+But, this type of scoping also has (initially) counterintuitive results like:
 
-<!-- But, this type of scoping also has (initially) counterintuitive results like: -->
+```{julia}
+zz = 0;
+for ii = 1:10
+  zz = ii
+end
+println("zz = $zz")
+```
 
-<!-- ```{julia} -->
-<!-- zz = 0; -->
-<!-- for ii = 1:10 -->
-<!--   zz = ii -->
-<!-- end -->
-<!-- println("zz = $zz") -->
-<!-- ``` -->
+--
 
-<!-- --- -->
+#### What happened?
 
-<!-- # Scope -->
+---
 
-<!-- What happened? -->
+## Scope
 
-<!-- -- -->
+#### What happened?
 
-<!-- The `zz` outside the for loop has a different scope, -->
-<!-- the .hi-blue[global scope], than the `zz` inside it -->
+The `zz` *outside* the for loop has a different scope: it's in the **global scope**
 
-<!-- -- -->
+--
 
-<!-- The global scope is the outer most scope, outside all functions and loops -->
+The global scope is the outermost scope, outside all functions and loops
 
-<!-- -- -->
+--
 
-<!-- The `zz` inside the for loop has a scope .hi-blue[local] to the loop -->
+The `zz` *inside* the for loop has a scope *local* to the loop
 
-<!-- -- -->
+--
 
-<!-- Since the outside `zz` has global scope the locally scoped variables in the loop can't change it -->
+Since the outside `zz` has global scope, the locally scoped variables in the loop can't change it
 
-<!-- --- -->
+---
 
-<!-- # Scope -->
+## Scope
 
-<!-- Generally you want to avoid global scope because it can cause conflicts, slowness, etc, but you can use `global` to force it if you want something to have global scope -->
+Generally, you want to avoid global scope because it can cause conflicts, slowness, etc. But you can use `global` to force it if you want something to have global scope
 
-<!-- ```{julia} -->
-<!-- zz = 0; -->
-<!-- for ii = 1:10 -->
-<!--   global zz -->
-<!--   zz = ii -->
-<!-- end -->
-<!-- println("zz = $zz") -->
-<!-- ``` -->
+```{julia}
+zz = 0;
+for ii = 1:10
+  global zz
+  zz = ii
+end
+println("zz = $zz")
+```
 
-<!-- --- -->
+---
 
-<!-- # Scope -->
+## Scope
 
-<!-- Local scope kicks in whenever you have a new block keyword (i.e. you indented something) except for `if` -->
+Local scope kicks in whenever you have a new block keyword (i.e. you indented something) except for `if`
 
-<!-- Global variables inside a local scope are inherted for .hi-blue[reading], not writing -->
+Global variables inside a local scope are inherited for .blue[reading], not writing
 
-<!-- ```{julia} -->
-<!-- x, y = 1, 2; -->
-<!-- function foo() -->
-<!--   x = 2        # assignment introduces a new local -->
-<!--   return x + y # y refers to the global -->
-<!-- end; -->
-<!-- foo() -->
-<!-- x -->
-<!-- ``` -->
+```{julia}
+x, y = 1, 2;
+function foo()
+  x = 2        # assignment introduces a new local
+  return x + y # y refers to the global
+end;
+foo()
+x
+```
 
+---
 
-<!-- --- -->
+## Scope
 
-<!-- # Scope -->
+We can fix looping issues with global scope by using a wrapper function that doesn't do anything but change the parent scope so it is not global
 
-<!-- Important piece: nested functions can modify their parent scope's .hi-blue[local] variables -->
+```{julia}
+zzz = 1;
+function wrapper()
+  zzz = 0;
+  for iii = 1:10
+    zzz = iii
+  end
+  println("zzz = $zzz")
+end
+wrapper()
+```
 
-<!-- -- -->
 
-<!-- ```{julia, results = 'hide'} -->
-<!-- x, y = 1, 2; # set globals -->
+---
 
-<!-- function f_outer() -->
-<!--   x = 2                # introduces a new local -->
-<!--   function f_inner() -->
-<!--     x = 10             # modifies the parent's x -->
-<!--     return x + y       # y is global -->
-<!--   end -->
-<!--   return f_inner() + x # 12 + 10 (x is modified in call of f_inner()) -->
-<!-- end; -->
-<!-- f_outer() -->
-<!-- x, y                   # verify that global x and y are unchanged -->
-<!-- ``` -->
-<!-- --- -->
+## Generic functions
 
-<!-- # Scope -->
+If you use Julia to write code for research you should aim to write **generic functions**
 
-<!-- ```{julia} -->
-<!-- function f_outer() -->
-<!--   x = 2                # introduces a new local -->
-<!--   function f_inner() -->
-<!--     x = 10             # modifies the parent's x -->
-<!--     return x + y       # y is global -->
-<!--   end -->
-<!--   return f_inner() + x # 12 + 10 (x is modified in call of f_inner()) -->
-<!-- end; -->
-<!-- f_outer() -->
-<!-- x, y                   # verify that global x and y are unchanged -->
-<!-- ``` -->
+--
 
-<!-- -- -->
+These functions
+- are flexible: e.g. can deal with someone using an `Int` instead of a `Float`
+- have high performance, speed comparable to C
 
-<!-- If `f_inner` was not nested and was in the global scope we'd get `14` not `22`, this is also a way to handle the issue with loops editing variables not created in their local scope -->
+---
 
-<!-- --- -->
+## Generic functions
 
-<!-- # Scope -->
+Functions are made generic by paying attention to types and making sure types are **stable**
 
-<!-- We can fix looping issues with global scope by using a wrapper function that doesn't do anything but change the parent scope so it is not global -->
+--
 
-<!-- ```{julia} -->
-<!-- function wrapper() -->
-<!--   zzz = 0; -->
-<!--   for iii = 1:10 -->
-<!--     zzz = iii -->
-<!--   end -->
-<!--   println("zzz = $zzz") -->
-<!-- end -->
-<!-- wrapper() -->
-<!-- ``` -->
+**Type stability:** Given an input into a function, operations on that input should maintain the type so Julia *knows* what its type will be throughout the full function call
 
-<!-- --- -->
+--
 
-<!-- # Closures -->
+This allows Julia to compile type-specialized versions of the functions, which will yield higher performance
 
-<!-- These inner functions we've been looking at are called .hi-blue[closures] -->
+--
 
-<!-- When a function `f` is parsed in Julia, it looks to see if any of the variables have been previously defined in the current scope -->
+*Type stability* sounds like mandating types (like what C and Fortran do, unlike what R and Python do). So how do we make it flexible?
 
-<!-- ```{julia} -->
-<!-- a = 0.2; -->
-<!-- f(x) = a * x^2;    # refers to the `a` in the outer scope -->
-<!-- f(1)               # univariate function -->
-<!-- ``` -->
+---
 
-<!-- --- -->
+## Generic functions: type stability
 
-<!-- # Closures -->
+These two functions look the same, but are they?
 
-<!-- ```{julia} -->
-<!-- function g(a) -->
-<!--     f(x) = a * x^2; # refers to the `a` passed in the function -->
-<!--     f(1);           # univariate function -->
-<!-- end -->
-<!-- g(0.2) -->
-<!-- ``` -->
+```{julia, results = 'hide'}
+function t1(n)
+  s = 0
+  t = 1
+  for i in 1:n
+     s += s/i
+     t = div(t, i)
+  end
+  return t
+end
+```
+```{julia, results = 'hide'}
+function t2(n)
+  s  = 0.0
+  t = 1
+  for i in 1:n
+     s += s/i
+     t = div(t, i)
+  end
+  return t
+end
+```
 
-<!-- -- -->
+---
 
-<!-- In both of these examples `f` is a closure designed to .hi-blue[capture] a variable from an outer scope -->
+## Generic functions
 
-<!-- --- -->
+No! t1 is *not type stable*
 
-<!-- # Closures -->
+--
 
-<!-- Here's a complicated example that actually returns a closure (a function!) itself: -->
+`t1` starts with `s` as an `Int64`. But then we have `s += s/i` which means it must hold a `Float64`
 
-<!-- --- -->
+--
 
-<!-- # Closures -->
+It must be converted to `Float` so it is not type stable
 
-<!-- ```{julia} -->
-<!-- x = 0; -->
-<!-- function toplevel(y) -->
-<!--   println("x = ", x, " is a global variable") -->
-<!--   println("y = ", y, " is a parameter") -->
-<!--   z = 2 -->
-<!--   println("z = ", z, " is a local variable") -->
+---
 
-<!--   function closure(v) -->
-<!--     println("v = ", v, " is a parameter") -->
-<!--     w = 3 -->
-<!--     println("w = ", w, " is a local variable") -->
-<!--     println("x = ", x, " is a global variable") -->
-<!--     println("y = ", y, " is a closed variable (a parameter of the outer function)") -->
-<!--     println("z = ", z, " is a closed variable (a local of the outer function)") -->
-<!--   end; -->
-<!--   return closure -->
-<!-- end; -->
-<!-- ``` -->
-<!-- What will be returned when we call these functions? -->
+## Generic functions: type stability
 
-<!-- --- -->
+We can see this when calling the macro `@code_warntype` where it reports `t1` at some point handles `s` that has type `Union{Float64,Int64}`, either `Float64` or `Int64`
 
-<!-- # Closures -->
+Julia now can't assume `s`'s type and produce pure integer or floating point code. This leads to **performance degradation**
 
-<!-- Here's a complicated example: -->
+<div align="center">
+  <img src="figures/t1_codewarn.png" height=150>
+  <img src="figures/t2_codewarn.png" height=150>
+</div>
 
-<!-- ```{julia} -->
-<!-- c_func = toplevel(10) -->
-<!-- c_func(20) -->
-<!-- ``` -->
+---
 
-<!-- The returned closure still has access to the outer function's local scope! -->
+## Concrete vs abstract types
 
+A **concrete type** is one that can be instantiated 
+- E.g.: `Float64`, `Bool`, `Int32`
 
+--
 
-<!-- --- -->
+An **abstract type** cannot 
+- E.g.: `Real`, `Number`, `Any`
 
-<!-- # Generic functions -->
+---
 
-<!-- If you use Julia to write code for research you should aim to write .hi-blue[generic functions] -->
+## Concrete vs abstract types
 
-<!-- -- -->
+Abstract types are used for organizing types
 
-<!-- These are functions that are flexible (e.g. can deal with someone using an `Int` instead of a `Float`) -->
-<!-- and have high performance (e.g. comparable speed to C) -->
+You can check where types are in the hierarchy (with the subtype operator `<:`)
 
-<!-- -- -->
+```{julia}
+@show Float64 <: Real
+@show Array <: Real
+@show Number <: Any
+```
 
-<!-- Functions are made generic by paying attention to types and making sure types are .hi-blue[stable] -->
+---
 
-<!-- -- -->
+## Concrete vs abstract types
 
-<!-- .hi-blue[Type stability:] Given an input into a function, operations on that input should maintain the type so Julia **knows** what its type will be throughout the full function call -->
+You can see the type hierarchy with the supertypes and subtypes commands
 
-<!-- -- -->
+```{julia}
+using Base: show_supertypes
+show_supertypes(Float64)
+```
 
-<!-- This allows it to compile type-specialized versions of the functions, which will yield higher performance -->
+---
 
-<!-- --- -->
+## Creating new types
 
-<!-- # Generic functions -->
+We can actually create new composite types using `struct`
 
-<!-- The question you might have is: Type stability sounds like mandating types (e.g. what C and Fortran do, not what R/Python/etc do), so how do we make it flexible? -->
+--
 
-<!-- -- -->
+```{julia}
+struct FoobarNoType # This will be immutable by default
+  a
+  b
+  c
+end
+```
 
-<!-- We'll see next -->
+This creates a new type called `FoobarNoType`
 
-<!-- --- -->
+---
 
-<!-- # These two functions look the same, but are they? -->
+## Creating new types
 
-<!-- ```{julia, results = 'hide'} -->
-<!-- function t1(n) -->
-<!--   s = 0 -->
-<!--   t = 1 -->
-<!--   for i in 1:n -->
-<!--      s += s/i -->
-<!--      t = div(t, i) -->
-<!--   end -->
-<!--   return t -->
-<!-- end -->
-<!-- ``` -->
-<!-- ```{julia, results = 'hide'} -->
-<!-- function t2(n) -->
-<!--   s  = 0.0 -->
-<!--   t = 1 -->
-<!--   for i in 1:n -->
-<!--      s += s/i -->
-<!--      t = div(t, i) -->
-<!--   end -->
-<!--   return t -->
-<!-- end -->
-<!-- ``` -->
+We can generate a variable of type `FoobarNoType` using its **constructor** which will have the same name
 
-<!-- --- -->
+--
 
-<!-- # No! t1 is not type stable -->
+```{julia}
+newfoo = FoobarNoType(1.3, 2, "plzzz");
+typeof(newfoo)
+newfoo.a
+```
 
-<!-- -- -->
+---
 
-<!-- `t1` starts with `s` as an `Int64` but then we have `s += s/i` which will mean it must hold a `Float64` -->
+## Creating new types
 
-<!-- -- -->
+Custom types are a *handy and elegant way of organizing your program*
 
-<!-- It must be converted to `Float` so it is not type stable -->
+- You can define a type `ModelParameters` to contain all your model parameters
 
-<!-- --- -->
+- Each variable you instantiate represents a single scenario
 
-<!-- # No! t1 is not type stable -->
+- Then, instead of having a function call
 
-<!-- We can see this when calling the macro `@code_warntype` where it reports `t1` at some point handles `s` that has type `Union{Float64,Int64}`, either `Float64` or `Int64` -->
+```
+RunMyModel(param1, param2, param3, param4, param5);
+```
 
-<!-- Julia now can't assume `s`'s type and produce pure integer or floating point code $\rightarrow$ performance degradation -->
+- You call
 
-<!-- <div align="center"> -->
-<!--   <img src="figures/t1_codewarn.png" height=150> -->
-<!--   <img src="figures/t2_codewarn.png" height=150> -->
-<!-- </div> -->
+```
+RunMyModel(modelParameters);
+```
 
-<!-- --- -->
 
-<!-- # THIS MATTERS -->
+---
 
-<!-- Here's an order of magnitude difference for a similar function -->
-<!-- ```{julia, results = 'hide'} -->
-<!-- # Type instable -->
-<!-- function type_unstable() -->
-<!--   x=1 -->
-<!--   for i = 1:10 -->
-<!--     x = x/2 -->
-<!--   end -->
-<!--   return x -->
-<!-- end -->
-<!-- # Type stable -->
-<!-- function type_stable() -->
-<!--   x=1.0 -->
-<!--   for i = 1:10 -->
-<!--     x = x/2 -->
-<!--   end -->
-<!--   return x -->
-<!-- end -->
-<!-- ``` -->
+## Creating new types
 
-<!-- --- -->
+.red[You should always declare types for the fields of a new composite type]
 
-<!-- # THIS MATTERS -->
+--
 
-<!-- Here's an order of magnitude difference for a similar function -->
+You can declare types with the double colon
 
-<!-- ```{julia} -->
-<!-- @btime type_unstable() -->
-<!-- @btime type_stable() -->
-<!-- ``` -->
 
-<!-- --- -->
+```{julia}
+struct FoobarType # This will be immutable by default
+  a::Float64
+  b::Int
+  c::String
+end
+```
 
-<!-- # Concrete vs abstract types -->
+---
 
-<!-- A **concrete type** is one that can be instantiated (`Float64` `Bool` `Int32`) -->
+## Creating new types
 
-<!-- -- -->
+```{julia}
+newfoo_typed = FoobarType(1.3, 2, "plzzz");
+typeof(newfoo_typed)
+newfoo.a
+```
 
-<!-- An **abstract type** cannot (`Real`, `Number`, `Any`) -->
+This lets the compiler generate efficient code because it knows the types of the fields when you construct a `FoobarType`
 
-<!-- --- -->
+Declaring abstract types isn't good enough: you need to declare concrete types. But how do we keep it flexible, then?
 
-<!-- # Concrete vs abstract types -->
+---
 
-<!-- Abstract types are for organizing the types -->
+## Creating new types
 
-<!-- You can check where types are in the hierarchy -->
+#### Parametric types are what help deliver flexibility
 
-<!-- ```{julia} -->
-<!-- @show Float64 <: Real -->
-<!-- @show Array <: Real -->
-<!-- @show Number <: Any -->
-<!-- ``` -->
+We can create types that hold different types of fields by declaring subsets of abstract types
 
-<!-- --- -->
+```{julia}
+struct FooParam{t1 <: Real, t2 <: Real, t3 <: AbstractArray{<:Real}}
+  a::t1
+  b::t2
+  c::t3
+end
+newfoo_para = FooParam(1.0, 7, [1., 4., 6.])
+```
 
-<!-- # Concrete vs abstract types -->
+--
 
-<!-- You can see the type hierarchy with the supertypes and subtypes commands -->
+The curly brackets declare all the different type subsets we will use in `FooParam`
 
-<!-- ```{julia} -->
-<!-- using Base: show_supertypes -->
-<!-- show_supertypes(Float64) -->
-<!-- ``` -->
+--
 
-<!-- --- -->
+This actually delivers high-performance code!
 
-<!-- # Creating new types -->
+---
 
-<!-- We can actually create new composite types using `struct` -->
+## Delivering flexibility
 
-<!-- -- -->
+We want to make sure types are stable but code is flexible
 
-<!-- ```{julia} -->
-<!-- struct FoobarNoType # This will be immutable by default -->
-<!--   a -->
-<!--   b -->
-<!--   c -->
-<!-- end -->
-<!-- ``` -->
+Ex: if want to preallocate an array to store data,
+how do we know how to declare it's type?
 
-<!-- --- -->
+--
 
-<!-- # Creating new types -->
+We don't need to!
 
-<!-- This creates a new type called `FoobarNoType`, and we can generate a variable of this type using its **constructor** which will have the same name -->
+---
 
-<!-- -- -->
+## Delivering flexibility
 
-<!-- ```{julia} -->
-<!-- newfoo = FoobarNoType(1.3, 2, "plzzz"); -->
-<!-- typeof(newfoo) -->
-<!-- newfoo.a -->
-<!-- ``` -->
+```{julia}
+using LinearAlgebra               # necessary for I
+function sametypes(x)
+  y = similar(x)                  # preallocates an array that is `similar` to x
+  z = I                           # creates a scalable identity matrix
+  q = ones(eltype(x), length(x))  # one is a type generic array of ones, fill creates the array of length(x)
+  y .= z * x + q
+  return y
+end
 
-<!-- -- -->
+x = [5.5, 7.0, 3.1];
+y = [7, 8, 9];
+```
 
-<!-- .hi-red[You should always declare types for the fields of a new composite type] -->
+---
 
-<!-- --- -->
+## Delivering flexibility
 
-<!-- # Creating new types -->
+We did not declare any types but the function is type stable
 
-<!-- You can declare types with the double colon -->
 
+```{julia, results = 'hide'}
+sametypes(x)
+sametypes(y)
+```
 
-<!-- ```{julia} -->
-<!-- struct FoobarType # This will be immutable by default -->
-<!--   a::Float64 -->
-<!--   b::Int -->
-<!--   c::String -->
-<!-- end -->
-<!-- ``` -->
+<div align="center">
+  <img src="figures/generic_codewarn_float.png" height=125>
+  <img src="figures/generic_codewarn_int.png" height=125>
+</div>
 
-<!-- --- -->
+--
 
-<!-- # Creating new types -->
+There's a lot of other functions out there that help with writing flexible, type-stable code
 
-<!-- ```{julia} -->
-<!-- newfoo_typed = FoobarType(1.3, 2, "plzzz"); -->
-<!-- typeof(newfoo_typed) -->
-<!-- newfoo.a -->
-<!-- ``` -->
+---
 
-<!-- This lets the compiler generate efficient code because it knows the types of the fields when you construct a `FoobarType` -->
+## Multiple dispatch
 
-<!-- Declaring abstract types isn't good enough, you need to declare concrete types...r do we? -->
+#### Why type stability really matters: multiple dispatch
 
-<!-- --- -->
+Neat thing about Julia: the same function name can perform different operations depending on the underlying type of the inputs
 
-<!-- # Parametric types are what help deliver flexibility -->
+A function specifies different **methods**, each of which operates on a specific set of types
 
-<!-- We can create types that hold different types of fields -->
-<!-- by declaring subsets of abstract types -->
+---
 
-<!-- ```{julia} -->
-<!-- struct FooParam{t1 <: Real, t2 <: Real, t3 <: AbstractArray{<:Real}} -->
-<!--   a::t1 -->
-<!--   b::t2 -->
-<!--   c::t3 -->
-<!-- end -->
-<!-- newfoo_para = FooParam(1.0, 7, [1., 4., 6.]) -->
-<!-- ``` -->
+## Multiple dispatch
 
-<!-- -- -->
+When you write a function that's type stable, you are actually writing many different methods, each of which are optimized for certain types
 
-<!-- The curly brackets declare all the different type subsets we will use in `FooParam` -->
+--
 
-<!-- -- -->
+If your function isn't type stable, the optimized method may not be used
 
-<!-- This actually delivers high performance code! -->
+This is why Julia can achieve C speeds: it compiles to C (or faster) code
 
-<!-- --- -->
+---
 
-<!-- # Delivering flexibility -->
+## Multiple dispatch
 
-<!-- We want to make sure types are stable but code is flexible -->
+`/` has 103 different methods depending on the input types, these are 103 specialized sets of codes
 
-<!-- Ex: if want to preallocate an array to store data, -->
-<!-- how do we know how to declare it's type? -->
+```{julia}
+methods(/)
+```
 
-<!-- -- -->
 
-<!-- We don't need to -->
+---
 
-<!-- --- -->
+## More on coding practices and efficiency
 
-<!-- # Delivering flexibility -->
+See [JuliaPraxis](https://github.com/JuliaPraxis) for best practices for naming, spacing, comments, etc
 
-<!-- ```{julia} -->
-<!-- using LinearAlgebra               # necessary for I -->
-<!-- function sametypes(x) -->
-<!--   y = similar(x)                  # creates an array that is `similar` to x, use this for preallocating -->
-<!--   z = I                           # creates a scalable identity matrix -->
-<!--   q = ones(eltype(x), length(x))  # one is a type generic array of ones, fill creates the array of length(x) -->
-<!--   y .= z * x + q -->
-<!--   return y -->
-<!-- end -->
+See more [Performance tips](https://docs.julialang.org/en/v1/manual/performance-tips) from Julia Documentation
 
-<!-- x = [5.5, 7.0, 3.1]; -->
-<!-- y = [7, 8, 9]; -->
-<!-- ``` -->
 
-<!-- --- -->
+---
 
-<!-- # Delivering flexibility -->
+## .blue[Course roadmap]
 
-<!-- We did not declare any types but the function is type stable -->
+This concludes Unit 1. Up next
 
-
-<!-- ```{julia, results = 'hide'} -->
-<!-- sametypes(x) -->
-<!-- sametypes(y) -->
-<!-- ``` -->
-
-<!-- <div align="center"> -->
-<!--   <img src="figures/generic_codewarn_float.png" height=125> -->
-<!--   <img src="figures/generic_codewarn_int.png" height=125> -->
-<!-- </div> -->
-
-<!-- -- -->
-
-<!-- There's a lot of other functions out there that help with writing flexible, type stable code -->
-
-<!-- --- -->
-
-<!-- # Multiple dispatch -->
-
-<!-- .hi-red[Why type stability really matters: multiple dispatch] -->
-
-<!-- Neat thing about Julia: the same function name can perform different operations depending on the underlying type of the inputs -->
-
-<!-- A function specifies different **methods**, each of which operates on a specific set of types -->
-
-<!-- --- -->
-
-<!-- # Multiple dispatch -->
-
-<!-- When you write a function that's type stable, you are actually writing many different methods, each of which are optimized for certain types -->
-
-<!-- -- -->
-
-<!-- If your function isn't type stable, the optimized method may not be used -->
-
-<!-- This is why Julia can achieve C speeds: it compiles to C (or faster) code -->
-
-<!-- --- -->
-
-<!-- # Multiple dispatch -->
-
-<!-- `/` has 103 different methods depending on the input types, these are 103 specialized sets of codes -->
-
-<!-- ```{julia} -->
-<!-- methods(/) -->
-<!-- ``` -->
-
-
-<!-- --- -->
-
-<!-- # Coding practices etc -->
-
-<!-- See [JuliaPraxis](https://github.com/JuliaPraxis) for best practices for naming, spacing, comments, etc -->
-
-
+1. .gray[Intro to Scientific Computing]
+2. **Numerical operations and representations** 
+   1. **Numerical arithmetic** $\leftarrow$
+   2. .gold[Numerical differentiation and integration]
+   3. .gold[Function approximation]
+3. Systems of equations
+4. Optimization
+5. Structural estimation
 

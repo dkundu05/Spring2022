@@ -827,15 +827,14 @@ end
 ```
 
 ```
-## We drew a 0.3125460849121985.
-## We drew a 0.5550133158356817.
-## We drew a 0.7293142604198248.
-## We drew a 0.2537635521825251.
-## We drew a 0.3938649845444786.
-## We drew a 0.7368122156360689.
-## We drew a 0.49158187866664294.
-## We drew a 0.4637018697765868.
-## We drew a 0.9053711918149782.
+## We drew a 0.8807957545265839.
+## We drew a 0.6019606239562297.
+## We drew a 0.905250390998886.
+## We drew a 0.3684536465888889.
+## We drew a 0.44105365060789825.
+## We drew a 0.5930958444772036.
+## We drew a 0.803368782682651.
+## We drew a 0.2983828386130052.
 ```
 
 ---
@@ -936,7 +935,7 @@ using BenchmarkTools
 ```
 
 ```
-##   25.502 ns (1 allocation: 112 bytes)
+##   25.402 ns (1 allocation: 112 bytes)
 ```
 
 ```julia
@@ -1127,9 +1126,25 @@ Use this (and the compact nested loop) sparingly since it's hard to follow
 
 ---
 
+## Vectorization
+
+Iterated operations element by element is usually an inefficient approach
+
+Another way is to do operations over an entire array. This is called **vectorization**
+
+&lt;div style="float: right"&gt;
+  &lt;img src="figures/vectorization.png" height=250&gt;
+&lt;/div&gt;
+
+- .small[It's faster because your processor can do some operations over multiple values with one instruction]
+- .small[We'll get a better idea next lecture when we review the basics of computer architecture]
+
+
+---
+
 ## Dot syntax: broadcasting/vectorization
 
-Vectorizing operations (i.e. applying it to a whole array or vector at once) is easy in Julia: just use *dot syntax* (like in MATLAB)
+Vectorizing operations is easy in Julia: just use *dot syntax* (like in MATLAB)
 
 --
 
@@ -1153,13 +1168,12 @@ squared_2 = g.(1:2:11)
 
 This is actually called **broadcasting** in Julia
 
---
-
-When broadcasting, you might want to consider **pre-allocating** arrays
 
 ---
 
 ## Dot syntax: broadcasting/vectorization
+
+When broadcasting, you might want to consider **pre-allocating** arrays
 
 Vectorization creates *temporary allocations*: temporary arrays in the middle of the process that aren't actually needed for the final product
 
@@ -1213,12 +1227,12 @@ Then, let's run and time it
 ```
 
 ```
-##   0.024529 seconds (13 allocations: 45.777 MiB, 36.27% gc time)
+##   0.027973 seconds (13 allocations: 45.777 MiB, 28.30% gc time)
 ```
 
 ```
 ## 1-element Vector{Vector{Float64}}:
-##  [0.559029702302616, 5.015935201888611, 10.395158277033923, 6.503914553691166, 9.23603648016116, 0.16480963951085378, 2.5208976088478625, 4.104891242156411, 8.870125122315631, 1.058540207179492  …  6.586844436324675, 4.955898099265856, 6.656684551726334, 9.274896851654226, 3.629378844429889, 2.187030439096461, 1.076550963345661, 2.3086360545227778, 1.6791689282677904, 11.178615825778879]
+##  [12.224591541005307, 8.090236341322143, 1.3306451742064562, 3.1958567590874387, 3.334389487206529, 9.867496190248225, 12.671200280479727, 1.7393796138291908, 0.2585512103758366, 7.981015170924782  …  0.7458611016697833, 2.3607691210085084, 6.348488774624829, 8.430683069976023, 0.40176271402009867, 1.442588539095714, 1.0045141987355504, 12.919790891089558, 0.2687933401022375, 2.7336580220258915]
 ```
 
 ```julia
@@ -1226,19 +1240,19 @@ Then, let's run and time it
 ```
 
 ```
-##   0.011038 seconds (3 allocations: 7.630 MiB, 80.63% gc time)
+##   0.011005 seconds (3 allocations: 7.630 MiB, 79.67% gc time)
 ```
 
 ```
 ## 1-element Vector{Vector{Float64}}:
-##  [0.559029702302616, 5.015935201888611, 10.395158277033923, 6.503914553691166, 9.23603648016116, 0.16480963951085378, 2.5208976088478625, 4.104891242156411, 8.870125122315631, 1.058540207179492  …  6.586844436324675, 4.955898099265856, 6.656684551726334, 9.274896851654226, 3.629378844429889, 2.187030439096461, 1.076550963345661, 2.3086360545227778, 1.6791689282677904, 11.178615825778879]
+##  [12.224591541005307, 8.090236341322143, 1.3306451742064562, 3.1958567590874387, 3.334389487206529, 9.867496190248225, 12.671200280479727, 1.7393796138291908, 0.2585512103758366, 7.981015170924782  …  0.7458611016697833, 2.3607691210085084, 6.348488774624829, 8.430683069976023, 0.40176271402009867, 1.442588539095714, 1.0045141987355504, 12.919790891089558, 0.2687933401022375, 2.7336580220258915]
 ```
 
 Full vectorization using `@.` is 10x faster with 1/6 of the memory allocation
 
 ---
 
-## Dot syntax: vectorization
+## Dot syntax: broadcasting/vectorization
 
 Not pre-allocated:
 
@@ -1251,7 +1265,7 @@ z = rand(length(y));     # input z
 
 ---
 
-## Dot syntax
+## Dot syntax: broadcasting/vectorization
 
 Here we are vectorizing the *function call*
 
@@ -1263,722 +1277,899 @@ h(1,2);
 
 
 ```julia
-@time out_1 = h.(y,z)    # evaluate h.(y,z) and time
+@time h_out_1 = h.(y,z)    # evaluate h.(y,z) and time
 ```
 
 ```
-##   0.072421 seconds (217.48 k allocations: 15.152 MiB, 92.97% compilation time)
+##   0.072481 seconds (217.48 k allocations: 15.152 MiB, 93.26% compilation time)
 ```
 
 ```
 ## 500001-element Vector{Float64}:
-##    1.050654802000304
-##    9.805376277023733
-##   25.58117610717384
-##   49.65484552706297
-##   81.70396509838763
-##  121.29654083072255
-##  169.31843254474558
-##  225.80249601180395
-##  289.16327862902415
-##  361.63049448540295
+##    1.5278876504977141
+##    9.47385567548676
+##   25.088273206077492
+##   49.46490071975952
+##   81.72027670107282
+##  121.53573733801852
+##  169.17858539364323
+##  225.2208997599673
+##  289.6462777641333
+##  361.1916680049963
 ##    ⋮
-##    9.999700002254835e11
-##    9.999740001698293e11
-##    9.999780001218011e11
-##    9.999820000811732e11
-##    9.999860000498339e11
-##    9.99990000025809e11
-##    9.999940000097559e11
-##    9.999980000017087e11
-##    1.000002000001438e12
+##    9.999700002256888e11
+##    9.99974000169761e11
+##    9.99978000121245e11
+##    9.999820000817563e11
+##    9.999860000490203e11
+##    9.999900000258177e11
+##    9.999940000091215e11
+##    9.999980000012495e11
+##    1.0000020000017798e12
 ```
 
 ---
-## Dot syntax: vectorization
+## Dot syntax: broadcasting/vectorization
 
 Here we are vectorizing the *function call* **and** *assignment*
 
 
 ```julia
-out_2 = similar(out_1) # This pre-alocates memory for an object of the same type and size
+h_out_2 = similar(h_out_1) # This pre-alocates memory for an object of the same type and size
 ```
 
 
 ```julia
-@time out_2 .= h.(y,z)
+@time h_out_2 .= h.(y,z)
 ```
 
 ```
-##   0.030975 seconds (48.63 k allocations: 2.340 MiB, 86.13% compilation time)
+##   0.031223 seconds (48.63 k allocations: 2.340 MiB, 85.80% compilation time)
 ```
 
 ```
 ## 500001-element Vector{Float64}:
-##    1.050654802000304
-##    9.805376277023733
-##   25.58117610717384
-##   49.65484552706297
-##   81.70396509838763
-##  121.29654083072255
-##  169.31843254474558
-##  225.80249601180395
-##  289.16327862902415
-##  361.63049448540295
+##    1.5278876504977141
+##    9.47385567548676
+##   25.088273206077492
+##   49.46490071975952
+##   81.72027670107282
+##  121.53573733801852
+##  169.17858539364323
+##  225.2208997599673
+##  289.6462777641333
+##  361.1916680049963
 ##    ⋮
-##    9.999700002254835e11
-##    9.999740001698293e11
-##    9.999780001218011e11
-##    9.999820000811732e11
-##    9.999860000498339e11
-##    9.99990000025809e11
-##    9.999940000097559e11
-##    9.999980000017087e11
-##    1.000002000001438e12
+##    9.999700002256888e11
+##    9.99974000169761e11
+##    9.99978000121245e11
+##    9.999820000817563e11
+##    9.999860000490203e11
+##    9.999900000258177e11
+##    9.999940000091215e11
+##    9.999980000012495e11
+##    1.0000020000017798e12
 ```
 
 ---
-## Dot syntax: vectorization
+## Dot syntax: broadcasting/vectorization
 
-Here we are vectorizing the *function call* **and** *assignment* **and** *operations*
+Here we are vectorizing the *function call* **and** *assignment* **and** even the *operations* inside the function
 
-
-```julia
-out_3 = similar(out_1)
-```
 
 ```julia
-@time @. out_3 = h(y,z)
+h_out_3 = similar(h_out_1)
+```
+
+```julia
+@time @. h_out_3 = h(y,z)
 ```
 
 ```
-##   0.004260 seconds (2 allocations: 128 bytes)
+##   0.004387 seconds (2 allocations: 128 bytes)
 ```
 
 ```
 ## 500001-element Vector{Float64}:
-##    1.050654802000304
-##    9.805376277023733
-##   25.58117610717384
-##   49.65484552706297
-##   81.70396509838763
-##  121.29654083072255
-##  169.31843254474558
-##  225.80249601180395
-##  289.16327862902415
-##  361.63049448540295
+##    1.5278876504977141
+##    9.47385567548676
+##   25.088273206077492
+##   49.46490071975952
+##   81.72027670107282
+##  121.53573733801852
+##  169.17858539364323
+##  225.2208997599673
+##  289.6462777641333
+##  361.1916680049963
 ##    ⋮
-##    9.999700002254835e11
-##    9.999740001698293e11
-##    9.999780001218011e11
-##    9.999820000811732e11
-##    9.999860000498339e11
-##    9.99990000025809e11
-##    9.999940000097559e11
-##    9.999980000017087e11
-##    1.000002000001438e12
+##    9.999700002256888e11
+##    9.99974000169761e11
+##    9.99978000121245e11
+##    9.999820000817563e11
+##    9.999860000490203e11
+##    9.999900000258177e11
+##    9.999940000091215e11
+##    9.999980000012495e11
+##    1.0000020000017798e12
 ```
 
-&lt;!-- --- --&gt;
+---
 
+## Dot syntax: broadcasting/vectorization
 
-&lt;!-- # Scope --&gt;
+The `@.` macro saves us from typing a bunch of `.`
 
 
-&lt;!-- The .hi-blue[scope] of a variable name determines when it is valid to refer to it --&gt;
+```julia
+h_vec(y,z) = y.^2 + sin.(z); h_vec(1,2); h_out_4 = similar(h_out_1)
+```
 
-&lt;!-- -- --&gt;
+```julia
+@time h_out_4 .= h.(y,z)
+```
 
-&lt;!-- Scope can be a frustrating concept --&gt;
+```
+##   0.004485 seconds (2 allocations: 128 bytes)
+```
 
-&lt;!-- -- --&gt;
+```
+## 500001-element Vector{Float64}:
+##    1.5278876504977141
+##    9.47385567548676
+##   25.088273206077492
+##   49.46490071975952
+##   81.72027670107282
+##  121.53573733801852
+##  169.17858539364323
+##  225.2208997599673
+##  289.6462777641333
+##  361.1916680049963
+##    ⋮
+##    9.999700002256888e11
+##    9.99974000169761e11
+##    9.99978000121245e11
+##    9.999820000817563e11
+##    9.999860000490203e11
+##    9.999900000258177e11
+##    9.999940000091215e11
+##    9.999980000012495e11
+##    1.0000020000017798e12
+```
 
-&lt;!-- If you want to dive into the details: the type of scoping in Julia is called **lexical scoping** --&gt;
 
-&lt;!-- -- --&gt;
+---
 
-&lt;!-- Different scopes can have the same name, i.e. `saving_rate`, but be assigned to different variables --&gt;
+## Scope
 
-&lt;!-- -- --&gt;
 
-&lt;!-- Let's walk through some simple examples to see how it works --&gt;
+The **scope** of a variable name determines when it is valid to refer to that variable
+  - E.g.: if you create a variable inside a function, can you reference that variable outside the function?
+  - You can think of scope as different contexts within your program
 
-&lt;!-- --- --&gt;
+--
+  
+The two basic scopes are **local** and **global**
 
-&lt;!-- # Scope --&gt;
+--
 
-&lt;!-- First, functions have their own local scope --&gt;
+Scope can be a frustrating concept to grasp at first. But understanding how scopes work can save you a lot of debugging time
 
-&lt;!-- -- --&gt;
+--
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- ff(xx) = xx^2; --&gt;
-&lt;!-- yy = 5; --&gt;
-&lt;!-- ff(yy) --&gt;
-&lt;!-- ``` --&gt;
+Let's walk through some simple examples to see how it works
 
-&lt;!-- `xx` isn't bound to any values outside the function `ff` --&gt;
+---
 
-&lt;!-- This is pretty natural for those of you who have done any programming before --&gt;
+## Scope
 
-&lt;!-- --- --&gt;
-&lt;!-- # Scope --&gt;
+First, functions have their own **local scope**
 
-&lt;!-- Locally scoped functions allow us to do things like: --&gt;
+--
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- xx = 10; --&gt;
-&lt;!-- fff(xx) = xx^2; --&gt;
-&lt;!-- fff(5) --&gt;
-&lt;!-- ``` --&gt;
 
-&lt;!-- Although `xx` was declared equal to 10, the function still evaluated at 5 --&gt;
+```julia
+ff(xx) = xx^2;
+yy = 5;
+ff(yy)
+```
 
-&lt;!-- -- --&gt;
+```
+## 25
+```
 
-&lt;!-- This is all kind of obvious so far --&gt;
+`xx` isn't bound to any values outside the function `ff`
+- It is only used inside the function
 
-&lt;!-- --- --&gt;
 
-&lt;!-- # Scope --&gt;
+---
+## Scope
 
-&lt;!-- But, this type of scoping also has (initially) counterintuitive results like: --&gt;
+Locally scoped functions allow us to do things like:
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- zz = 0; --&gt;
-&lt;!-- for ii = 1:10 --&gt;
-&lt;!--   zz = ii --&gt;
-&lt;!-- end --&gt;
-&lt;!-- println("zz = $zz") --&gt;
-&lt;!-- ``` --&gt;
 
-&lt;!-- --- --&gt;
+```julia
+xx = 10;
+fff(xx) = xx^2;
+fff(5)
+```
 
-&lt;!-- # Scope --&gt;
+```
+## 25
+```
 
-&lt;!-- What happened? --&gt;
+--
 
-&lt;!-- -- --&gt;
+Although `xx` was declared equal to 10 *outside the function*, the function still evaluated `xx` within its own scope at 5 (the value passed as argument)
 
-&lt;!-- The `zz` outside the for loop has a different scope, --&gt;
-&lt;!-- the .hi-blue[global scope], than the `zz` inside it --&gt;
+---
 
-&lt;!-- -- --&gt;
+## Scope
 
-&lt;!-- The global scope is the outer most scope, outside all functions and loops --&gt;
+But, this type of scoping also has (initially) counterintuitive results like:
 
-&lt;!-- -- --&gt;
 
-&lt;!-- The `zz` inside the for loop has a scope .hi-blue[local] to the loop --&gt;
+```julia
+zz = 0;
+for ii = 1:10
+  zz = ii
+end
+println("zz = $zz")
+```
 
-&lt;!-- -- --&gt;
+```
+## zz = 0
+```
 
-&lt;!-- Since the outside `zz` has global scope the locally scoped variables in the loop can't change it --&gt;
+--
 
-&lt;!-- --- --&gt;
+#### What happened?
 
-&lt;!-- # Scope --&gt;
+---
 
-&lt;!-- Generally you want to avoid global scope because it can cause conflicts, slowness, etc, but you can use `global` to force it if you want something to have global scope --&gt;
+## Scope
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- zz = 0; --&gt;
-&lt;!-- for ii = 1:10 --&gt;
-&lt;!--   global zz --&gt;
-&lt;!--   zz = ii --&gt;
-&lt;!-- end --&gt;
-&lt;!-- println("zz = $zz") --&gt;
-&lt;!-- ``` --&gt;
+#### What happened?
 
-&lt;!-- --- --&gt;
+The `zz` *outside* the for loop has a different scope: it's in the **global scope**
 
-&lt;!-- # Scope --&gt;
+--
 
-&lt;!-- Local scope kicks in whenever you have a new block keyword (i.e. you indented something) except for `if` --&gt;
+The global scope is the outermost scope, outside all functions and loops
 
-&lt;!-- Global variables inside a local scope are inherted for .hi-blue[reading], not writing --&gt;
+--
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- x, y = 1, 2; --&gt;
-&lt;!-- function foo() --&gt;
-&lt;!--   x = 2        # assignment introduces a new local --&gt;
-&lt;!--   return x + y # y refers to the global --&gt;
-&lt;!-- end; --&gt;
-&lt;!-- foo() --&gt;
-&lt;!-- x --&gt;
-&lt;!-- ``` --&gt;
+The `zz` *inside* the for loop has a scope *local* to the loop
 
+--
 
-&lt;!-- --- --&gt;
+Since the outside `zz` has global scope, the locally scoped variables in the loop can't change it
 
-&lt;!-- # Scope --&gt;
+---
 
-&lt;!-- Important piece: nested functions can modify their parent scope's .hi-blue[local] variables --&gt;
+## Scope
 
-&lt;!-- -- --&gt;
+Generally, you want to avoid global scope because it can cause conflicts, slowness, etc. But you can use `global` to force it if you want something to have global scope
 
-&lt;!-- ```{julia, results = 'hide'} --&gt;
-&lt;!-- x, y = 1, 2; # set globals --&gt;
 
-&lt;!-- function f_outer() --&gt;
-&lt;!--   x = 2                # introduces a new local --&gt;
-&lt;!--   function f_inner() --&gt;
-&lt;!--     x = 10             # modifies the parent's x --&gt;
-&lt;!--     return x + y       # y is global --&gt;
-&lt;!--   end --&gt;
-&lt;!--   return f_inner() + x # 12 + 10 (x is modified in call of f_inner()) --&gt;
-&lt;!-- end; --&gt;
-&lt;!-- f_outer() --&gt;
-&lt;!-- x, y                   # verify that global x and y are unchanged --&gt;
-&lt;!-- ``` --&gt;
-&lt;!-- --- --&gt;
+```julia
+zz = 0;
+for ii = 1:10
+  global zz
+  zz = ii
+end
+println("zz = $zz")
+```
 
-&lt;!-- # Scope --&gt;
+```
+## zz = 10
+```
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- function f_outer() --&gt;
-&lt;!--   x = 2                # introduces a new local --&gt;
-&lt;!--   function f_inner() --&gt;
-&lt;!--     x = 10             # modifies the parent's x --&gt;
-&lt;!--     return x + y       # y is global --&gt;
-&lt;!--   end --&gt;
-&lt;!--   return f_inner() + x # 12 + 10 (x is modified in call of f_inner()) --&gt;
-&lt;!-- end; --&gt;
-&lt;!-- f_outer() --&gt;
-&lt;!-- x, y                   # verify that global x and y are unchanged --&gt;
-&lt;!-- ``` --&gt;
+---
 
-&lt;!-- -- --&gt;
+## Scope
 
-&lt;!-- If `f_inner` was not nested and was in the global scope we'd get `14` not `22`, this is also a way to handle the issue with loops editing variables not created in their local scope --&gt;
+Local scope kicks in whenever you have a new block keyword (i.e. you indented something) except for `if`
 
-&lt;!-- --- --&gt;
+Global variables inside a local scope are inherited for .blue[reading], not writing
 
-&lt;!-- # Scope --&gt;
 
-&lt;!-- We can fix looping issues with global scope by using a wrapper function that doesn't do anything but change the parent scope so it is not global --&gt;
+```julia
+x, y = 1, 2;
+function foo()
+  x = 2        # assignment introduces a new local
+  return x + y # y refers to the global
+end;
+foo()
+```
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- function wrapper() --&gt;
-&lt;!--   zzz = 0; --&gt;
-&lt;!--   for iii = 1:10 --&gt;
-&lt;!--     zzz = iii --&gt;
-&lt;!--   end --&gt;
-&lt;!--   println("zzz = $zzz") --&gt;
-&lt;!-- end --&gt;
-&lt;!-- wrapper() --&gt;
-&lt;!-- ``` --&gt;
+```
+## 4
+```
 
-&lt;!-- --- --&gt;
+```julia
+x
+```
 
-&lt;!-- # Closures --&gt;
+```
+## 1
+```
 
-&lt;!-- These inner functions we've been looking at are called .hi-blue[closures] --&gt;
+---
 
-&lt;!-- When a function `f` is parsed in Julia, it looks to see if any of the variables have been previously defined in the current scope --&gt;
+## Scope
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- a = 0.2; --&gt;
-&lt;!-- f(x) = a * x^2;    # refers to the `a` in the outer scope --&gt;
-&lt;!-- f(1)               # univariate function --&gt;
-&lt;!-- ``` --&gt;
+We can fix looping issues with global scope by using a wrapper function that doesn't do anything but change the parent scope so it is not global
 
-&lt;!-- --- --&gt;
 
-&lt;!-- # Closures --&gt;
+```julia
+zzz = 1;
+function wrapper()
+  zzz = 0;
+  for iii = 1:10
+    zzz = iii
+  end
+  println("zzz = $zzz")
+end
+```
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- function g(a) --&gt;
-&lt;!--     f(x) = a * x^2; # refers to the `a` passed in the function --&gt;
-&lt;!--     f(1);           # univariate function --&gt;
-&lt;!-- end --&gt;
-&lt;!-- g(0.2) --&gt;
-&lt;!-- ``` --&gt;
+```
+## wrapper (generic function with 1 method)
+```
 
-&lt;!-- -- --&gt;
+```julia
+wrapper()
+```
 
-&lt;!-- In both of these examples `f` is a closure designed to .hi-blue[capture] a variable from an outer scope --&gt;
+```
+## zzz = 10
+```
 
-&lt;!-- --- --&gt;
 
-&lt;!-- # Closures --&gt;
+---
 
-&lt;!-- Here's a complicated example that actually returns a closure (a function!) itself: --&gt;
+## Generic functions
 
-&lt;!-- --- --&gt;
+If you use Julia to write code for research you should aim to write **generic functions**
 
-&lt;!-- # Closures --&gt;
+--
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- x = 0; --&gt;
-&lt;!-- function toplevel(y) --&gt;
-&lt;!--   println("x = ", x, " is a global variable") --&gt;
-&lt;!--   println("y = ", y, " is a parameter") --&gt;
-&lt;!--   z = 2 --&gt;
-&lt;!--   println("z = ", z, " is a local variable") --&gt;
+These functions
+- are flexible: e.g. can deal with someone using an `Int` instead of a `Float`
+- have high performance, speed comparable to C
 
-&lt;!--   function closure(v) --&gt;
-&lt;!--     println("v = ", v, " is a parameter") --&gt;
-&lt;!--     w = 3 --&gt;
-&lt;!--     println("w = ", w, " is a local variable") --&gt;
-&lt;!--     println("x = ", x, " is a global variable") --&gt;
-&lt;!--     println("y = ", y, " is a closed variable (a parameter of the outer function)") --&gt;
-&lt;!--     println("z = ", z, " is a closed variable (a local of the outer function)") --&gt;
-&lt;!--   end; --&gt;
-&lt;!--   return closure --&gt;
-&lt;!-- end; --&gt;
-&lt;!-- ``` --&gt;
-&lt;!-- What will be returned when we call these functions? --&gt;
+---
 
-&lt;!-- --- --&gt;
+## Generic functions
 
-&lt;!-- # Closures --&gt;
+Functions are made generic by paying attention to types and making sure types are **stable**
 
-&lt;!-- Here's a complicated example: --&gt;
+--
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- c_func = toplevel(10) --&gt;
-&lt;!-- c_func(20) --&gt;
-&lt;!-- ``` --&gt;
+**Type stability:** Given an input into a function, operations on that input should maintain the type so Julia *knows* what its type will be throughout the full function call
 
-&lt;!-- The returned closure still has access to the outer function's local scope! --&gt;
+--
 
+This allows Julia to compile type-specialized versions of the functions, which will yield higher performance
 
+--
 
-&lt;!-- --- --&gt;
+*Type stability* sounds like mandating types (like what C and Fortran do, unlike what R and Python do). So how do we make it flexible?
 
-&lt;!-- # Generic functions --&gt;
+---
 
-&lt;!-- If you use Julia to write code for research you should aim to write .hi-blue[generic functions] --&gt;
+## Generic functions: type stability
 
-&lt;!-- -- --&gt;
+These two functions look the same, but are they?
 
-&lt;!-- These are functions that are flexible (e.g. can deal with someone using an `Int` instead of a `Float`) --&gt;
-&lt;!-- and have high performance (e.g. comparable speed to C) --&gt;
 
-&lt;!-- -- --&gt;
+```julia
+function t1(n)
+  s = 0
+  t = 1
+  for i in 1:n
+     s += s/i
+     t = div(t, i)
+  end
+  return t
+end
+```
 
-&lt;!-- Functions are made generic by paying attention to types and making sure types are .hi-blue[stable] --&gt;
+```julia
+function t2(n)
+  s  = 0.0
+  t = 1
+  for i in 1:n
+     s += s/i
+     t = div(t, i)
+  end
+  return t
+end
+```
 
-&lt;!-- -- --&gt;
+---
 
-&lt;!-- .hi-blue[Type stability:] Given an input into a function, operations on that input should maintain the type so Julia **knows** what its type will be throughout the full function call --&gt;
+## Generic functions
 
-&lt;!-- -- --&gt;
+No! t1 is *not type stable*
 
-&lt;!-- This allows it to compile type-specialized versions of the functions, which will yield higher performance --&gt;
+--
 
-&lt;!-- --- --&gt;
+`t1` starts with `s` as an `Int64`. But then we have `s += s/i` which means it must hold a `Float64`
 
-&lt;!-- # Generic functions --&gt;
+--
 
-&lt;!-- The question you might have is: Type stability sounds like mandating types (e.g. what C and Fortran do, not what R/Python/etc do), so how do we make it flexible? --&gt;
+It must be converted to `Float` so it is not type stable
 
-&lt;!-- -- --&gt;
+---
 
-&lt;!-- We'll see next --&gt;
+## Generic functions: type stability
 
-&lt;!-- --- --&gt;
+We can see this when calling the macro `@code_warntype` where it reports `t1` at some point handles `s` that has type `Union{Float64,Int64}`, either `Float64` or `Int64`
 
-&lt;!-- # These two functions look the same, but are they? --&gt;
+Julia now can't assume `s`'s type and produce pure integer or floating point code. This leads to **performance degradation**
 
-&lt;!-- ```{julia, results = 'hide'} --&gt;
-&lt;!-- function t1(n) --&gt;
-&lt;!--   s = 0 --&gt;
-&lt;!--   t = 1 --&gt;
-&lt;!--   for i in 1:n --&gt;
-&lt;!--      s += s/i --&gt;
-&lt;!--      t = div(t, i) --&gt;
-&lt;!--   end --&gt;
-&lt;!--   return t --&gt;
-&lt;!-- end --&gt;
-&lt;!-- ``` --&gt;
-&lt;!-- ```{julia, results = 'hide'} --&gt;
-&lt;!-- function t2(n) --&gt;
-&lt;!--   s  = 0.0 --&gt;
-&lt;!--   t = 1 --&gt;
-&lt;!--   for i in 1:n --&gt;
-&lt;!--      s += s/i --&gt;
-&lt;!--      t = div(t, i) --&gt;
-&lt;!--   end --&gt;
-&lt;!--   return t --&gt;
-&lt;!-- end --&gt;
-&lt;!-- ``` --&gt;
+&lt;div align="center"&gt;
+  &lt;img src="figures/t1_codewarn.png" height=150&gt;
+  &lt;img src="figures/t2_codewarn.png" height=150&gt;
+&lt;/div&gt;
 
-&lt;!-- --- --&gt;
+---
 
-&lt;!-- # No! t1 is not type stable --&gt;
+## Concrete vs abstract types
 
-&lt;!-- -- --&gt;
+A **concrete type** is one that can be instantiated 
+- E.g.: `Float64`, `Bool`, `Int32`
 
-&lt;!-- `t1` starts with `s` as an `Int64` but then we have `s += s/i` which will mean it must hold a `Float64` --&gt;
+--
 
-&lt;!-- -- --&gt;
+An **abstract type** cannot 
+- E.g.: `Real`, `Number`, `Any`
 
-&lt;!-- It must be converted to `Float` so it is not type stable --&gt;
+---
 
-&lt;!-- --- --&gt;
+## Concrete vs abstract types
 
-&lt;!-- # No! t1 is not type stable --&gt;
+Abstract types are used for organizing types
 
-&lt;!-- We can see this when calling the macro `@code_warntype` where it reports `t1` at some point handles `s` that has type `Union{Float64,Int64}`, either `Float64` or `Int64` --&gt;
+You can check where types are in the hierarchy (with the subtype operator `&lt;:`)
 
-&lt;!-- Julia now can't assume `s`'s type and produce pure integer or floating point code `\(\rightarrow\)` performance degradation --&gt;
 
-&lt;!-- &lt;div align="center"&gt; --&gt;
-&lt;!--   &lt;img src="figures/t1_codewarn.png" height=150&gt; --&gt;
-&lt;!--   &lt;img src="figures/t2_codewarn.png" height=150&gt; --&gt;
-&lt;!-- &lt;/div&gt; --&gt;
+```julia
+@show Float64 &lt;: Real
+```
 
-&lt;!-- --- --&gt;
+```
+## Float64 &lt;: Real = true
+```
 
-&lt;!-- # THIS MATTERS --&gt;
+```
+## true
+```
 
-&lt;!-- Here's an order of magnitude difference for a similar function --&gt;
-&lt;!-- ```{julia, results = 'hide'} --&gt;
-&lt;!-- # Type instable --&gt;
-&lt;!-- function type_unstable() --&gt;
-&lt;!--   x=1 --&gt;
-&lt;!--   for i = 1:10 --&gt;
-&lt;!--     x = x/2 --&gt;
-&lt;!--   end --&gt;
-&lt;!--   return x --&gt;
-&lt;!-- end --&gt;
-&lt;!-- # Type stable --&gt;
-&lt;!-- function type_stable() --&gt;
-&lt;!--   x=1.0 --&gt;
-&lt;!--   for i = 1:10 --&gt;
-&lt;!--     x = x/2 --&gt;
-&lt;!--   end --&gt;
-&lt;!--   return x --&gt;
-&lt;!-- end --&gt;
-&lt;!-- ``` --&gt;
+```julia
+@show Array &lt;: Real
+```
 
-&lt;!-- --- --&gt;
+```
+## Array &lt;: Real = false
+```
 
-&lt;!-- # THIS MATTERS --&gt;
+```
+## false
+```
 
-&lt;!-- Here's an order of magnitude difference for a similar function --&gt;
+```julia
+@show Number &lt;: Any
+```
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- @btime type_unstable() --&gt;
-&lt;!-- @btime type_stable() --&gt;
-&lt;!-- ``` --&gt;
+```
+## Number &lt;: Any = true
+```
 
-&lt;!-- --- --&gt;
+```
+## true
+```
 
-&lt;!-- # Concrete vs abstract types --&gt;
+---
 
-&lt;!-- A **concrete type** is one that can be instantiated (`Float64` `Bool` `Int32`) --&gt;
+## Concrete vs abstract types
 
-&lt;!-- -- --&gt;
+You can see the type hierarchy with the supertypes and subtypes commands
 
-&lt;!-- An **abstract type** cannot (`Real`, `Number`, `Any`) --&gt;
 
-&lt;!-- --- --&gt;
+```julia
+using Base: show_supertypes
+show_supertypes(Float64)
+```
 
-&lt;!-- # Concrete vs abstract types --&gt;
+```
+## Float64 &lt;: AbstractFloat &lt;: Real &lt;: Number &lt;: Any
+```
 
-&lt;!-- Abstract types are for organizing the types --&gt;
+---
 
-&lt;!-- You can check where types are in the hierarchy --&gt;
+## Creating new types
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- @show Float64 &lt;: Real --&gt;
-&lt;!-- @show Array &lt;: Real --&gt;
-&lt;!-- @show Number &lt;: Any --&gt;
-&lt;!-- ``` --&gt;
+We can actually create new composite types using `struct`
 
-&lt;!-- --- --&gt;
+--
 
-&lt;!-- # Concrete vs abstract types --&gt;
 
-&lt;!-- You can see the type hierarchy with the supertypes and subtypes commands --&gt;
+```julia
+struct FoobarNoType # This will be immutable by default
+  a
+  b
+  c
+end
+```
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- using Base: show_supertypes --&gt;
-&lt;!-- show_supertypes(Float64) --&gt;
-&lt;!-- ``` --&gt;
+This creates a new type called `FoobarNoType`
 
-&lt;!-- --- --&gt;
+---
 
-&lt;!-- # Creating new types --&gt;
+## Creating new types
 
-&lt;!-- We can actually create new composite types using `struct` --&gt;
+We can generate a variable of type `FoobarNoType` using its **constructor** which will have the same name
 
-&lt;!-- -- --&gt;
+--
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- struct FoobarNoType # This will be immutable by default --&gt;
-&lt;!--   a --&gt;
-&lt;!--   b --&gt;
-&lt;!--   c --&gt;
-&lt;!-- end --&gt;
-&lt;!-- ``` --&gt;
 
-&lt;!-- --- --&gt;
+```julia
+newfoo = FoobarNoType(1.3, 2, "plzzz");
+typeof(newfoo)
+```
 
-&lt;!-- # Creating new types --&gt;
+```
+## FoobarNoType
+```
 
-&lt;!-- This creates a new type called `FoobarNoType`, and we can generate a variable of this type using its **constructor** which will have the same name --&gt;
+```julia
+newfoo.a
+```
 
-&lt;!-- -- --&gt;
+```
+## 1.3
+```
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- newfoo = FoobarNoType(1.3, 2, "plzzz"); --&gt;
-&lt;!-- typeof(newfoo) --&gt;
-&lt;!-- newfoo.a --&gt;
-&lt;!-- ``` --&gt;
+---
 
-&lt;!-- -- --&gt;
+## Creating new types
 
-&lt;!-- .hi-red[You should always declare types for the fields of a new composite type] --&gt;
+Custom types are a *handy and elegant way of organizing your program*
 
-&lt;!-- --- --&gt;
+- You can define a type `ModelParameters` to contain all your model parameters
 
-&lt;!-- # Creating new types --&gt;
+- Each variable you instantiate represents a single scenario
 
-&lt;!-- You can declare types with the double colon --&gt;
+- Then, instead of having a function call
 
+```
+RunMyModel(param1, param2, param3, param4, param5);
+```
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- struct FoobarType # This will be immutable by default --&gt;
-&lt;!--   a::Float64 --&gt;
-&lt;!--   b::Int --&gt;
-&lt;!--   c::String --&gt;
-&lt;!-- end --&gt;
-&lt;!-- ``` --&gt;
+- You call
 
-&lt;!-- --- --&gt;
+```
+RunMyModel(modelParameters);
+```
 
-&lt;!-- # Creating new types --&gt;
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- newfoo_typed = FoobarType(1.3, 2, "plzzz"); --&gt;
-&lt;!-- typeof(newfoo_typed) --&gt;
-&lt;!-- newfoo.a --&gt;
-&lt;!-- ``` --&gt;
+---
 
-&lt;!-- This lets the compiler generate efficient code because it knows the types of the fields when you construct a `FoobarType` --&gt;
+## Creating new types
 
-&lt;!-- Declaring abstract types isn't good enough, you need to declare concrete types...r do we? --&gt;
+.red[You should always declare types for the fields of a new composite type]
 
-&lt;!-- --- --&gt;
+--
 
-&lt;!-- # Parametric types are what help deliver flexibility --&gt;
+You can declare types with the double colon
 
-&lt;!-- We can create types that hold different types of fields --&gt;
-&lt;!-- by declaring subsets of abstract types --&gt;
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- struct FooParam{t1 &lt;: Real, t2 &lt;: Real, t3 &lt;: AbstractArray{&lt;:Real}} --&gt;
-&lt;!--   a::t1 --&gt;
-&lt;!--   b::t2 --&gt;
-&lt;!--   c::t3 --&gt;
-&lt;!-- end --&gt;
-&lt;!-- newfoo_para = FooParam(1.0, 7, [1., 4., 6.]) --&gt;
-&lt;!-- ``` --&gt;
 
-&lt;!-- -- --&gt;
+```julia
+struct FoobarType # This will be immutable by default
+  a::Float64
+  b::Int
+  c::String
+end
+```
 
-&lt;!-- The curly brackets declare all the different type subsets we will use in `FooParam` --&gt;
+---
 
-&lt;!-- -- --&gt;
+## Creating new types
 
-&lt;!-- This actually delivers high performance code! --&gt;
 
-&lt;!-- --- --&gt;
+```julia
+newfoo_typed = FoobarType(1.3, 2, "plzzz");
+typeof(newfoo_typed)
+```
 
-&lt;!-- # Delivering flexibility --&gt;
+```
+## FoobarType
+```
 
-&lt;!-- We want to make sure types are stable but code is flexible --&gt;
+```julia
+newfoo.a
+```
 
-&lt;!-- Ex: if want to preallocate an array to store data, --&gt;
-&lt;!-- how do we know how to declare it's type? --&gt;
+```
+## 1.3
+```
 
-&lt;!-- -- --&gt;
+This lets the compiler generate efficient code because it knows the types of the fields when you construct a `FoobarType`
 
-&lt;!-- We don't need to --&gt;
+Declaring abstract types isn't good enough: you need to declare concrete types. But how do we keep it flexible, then?
 
-&lt;!-- --- --&gt;
+---
 
-&lt;!-- # Delivering flexibility --&gt;
+## Creating new types
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- using LinearAlgebra               # necessary for I --&gt;
-&lt;!-- function sametypes(x) --&gt;
-&lt;!--   y = similar(x)                  # creates an array that is `similar` to x, use this for preallocating --&gt;
-&lt;!--   z = I                           # creates a scalable identity matrix --&gt;
-&lt;!--   q = ones(eltype(x), length(x))  # one is a type generic array of ones, fill creates the array of length(x) --&gt;
-&lt;!--   y .= z * x + q --&gt;
-&lt;!--   return y --&gt;
-&lt;!-- end --&gt;
+#### Parametric types are what help deliver flexibility
 
-&lt;!-- x = [5.5, 7.0, 3.1]; --&gt;
-&lt;!-- y = [7, 8, 9]; --&gt;
-&lt;!-- ``` --&gt;
+We can create types that hold different types of fields by declaring subsets of abstract types
 
-&lt;!-- --- --&gt;
 
-&lt;!-- # Delivering flexibility --&gt;
+```julia
+struct FooParam{t1 &lt;: Real, t2 &lt;: Real, t3 &lt;: AbstractArray{&lt;:Real}}
+  a::t1
+  b::t2
+  c::t3
+end
+newfoo_para = FooParam(1.0, 7, [1., 4., 6.])
+```
 
-&lt;!-- We did not declare any types but the function is type stable --&gt;
+```
+## FooParam{Float64, Int64, Vector{Float64}}(1.0, 7, [1.0, 4.0, 6.0])
+```
 
+--
 
-&lt;!-- ```{julia, results = 'hide'} --&gt;
-&lt;!-- sametypes(x) --&gt;
-&lt;!-- sametypes(y) --&gt;
-&lt;!-- ``` --&gt;
+The curly brackets declare all the different type subsets we will use in `FooParam`
 
-&lt;!-- &lt;div align="center"&gt; --&gt;
-&lt;!--   &lt;img src="figures/generic_codewarn_float.png" height=125&gt; --&gt;
-&lt;!--   &lt;img src="figures/generic_codewarn_int.png" height=125&gt; --&gt;
-&lt;!-- &lt;/div&gt; --&gt;
+--
 
-&lt;!-- -- --&gt;
+This actually delivers high-performance code!
 
-&lt;!-- There's a lot of other functions out there that help with writing flexible, type stable code --&gt;
+---
 
-&lt;!-- --- --&gt;
+## Delivering flexibility
 
-&lt;!-- # Multiple dispatch --&gt;
+We want to make sure types are stable but code is flexible
 
-&lt;!-- .hi-red[Why type stability really matters: multiple dispatch] --&gt;
+Ex: if want to preallocate an array to store data,
+how do we know how to declare it's type?
 
-&lt;!-- Neat thing about Julia: the same function name can perform different operations depending on the underlying type of the inputs --&gt;
+--
 
-&lt;!-- A function specifies different **methods**, each of which operates on a specific set of types --&gt;
+We don't need to!
 
-&lt;!-- --- --&gt;
+---
 
-&lt;!-- # Multiple dispatch --&gt;
+## Delivering flexibility
 
-&lt;!-- When you write a function that's type stable, you are actually writing many different methods, each of which are optimized for certain types --&gt;
 
-&lt;!-- -- --&gt;
+```julia
+using LinearAlgebra               # necessary for I
+function sametypes(x)
+  y = similar(x)                  # preallocates an array that is `similar` to x
+  z = I                           # creates a scalable identity matrix
+  q = ones(eltype(x), length(x))  # one is a type generic array of ones, fill creates the array of length(x)
+  y .= z * x + q
+  return y
+end
+```
 
-&lt;!-- If your function isn't type stable, the optimized method may not be used --&gt;
+```
+## sametypes (generic function with 1 method)
+```
 
-&lt;!-- This is why Julia can achieve C speeds: it compiles to C (or faster) code --&gt;
+```julia
 
-&lt;!-- --- --&gt;
+x = [5.5, 7.0, 3.1];
+y = [7, 8, 9];
+```
 
-&lt;!-- # Multiple dispatch --&gt;
+---
 
-&lt;!-- `/` has 103 different methods depending on the input types, these are 103 specialized sets of codes --&gt;
+## Delivering flexibility
 
-&lt;!-- ```{julia} --&gt;
-&lt;!-- methods(/) --&gt;
-&lt;!-- ``` --&gt;
+We did not declare any types but the function is type stable
 
 
-&lt;!-- --- --&gt;
 
-&lt;!-- # Coding practices etc --&gt;
+```julia
+sametypes(x)
+sametypes(y)
+```
 
-&lt;!-- See [JuliaPraxis](https://github.com/JuliaPraxis) for best practices for naming, spacing, comments, etc --&gt;
+&lt;div align="center"&gt;
+  &lt;img src="figures/generic_codewarn_float.png" height=125&gt;
+  &lt;img src="figures/generic_codewarn_int.png" height=125&gt;
+&lt;/div&gt;
 
+--
 
+There's a lot of other functions out there that help with writing flexible, type-stable code
+
+---
+
+## Multiple dispatch
+
+#### Why type stability really matters: multiple dispatch
+
+Neat thing about Julia: the same function name can perform different operations depending on the underlying type of the inputs
+
+A function specifies different **methods**, each of which operates on a specific set of types
+
+---
+
+## Multiple dispatch
+
+When you write a function that's type stable, you are actually writing many different methods, each of which are optimized for certain types
+
+--
+
+If your function isn't type stable, the optimized method may not be used
+
+This is why Julia can achieve C speeds: it compiles to C (or faster) code
+
+---
+
+## Multiple dispatch
+
+`/` has 103 different methods depending on the input types, these are 103 specialized sets of codes
+
+
+```julia
+methods(/)
+```
+
+```
+## # 118 methods for generic function "/":
+## [1] /(a, b::ChainRulesCore.AbstractThunk) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\thunks.jl:33
+## [2] /(x::Union{Int128, Int16, Int32, Int64, Int8, UInt128, UInt16, UInt32, UInt64, UInt8}, y::Union{Int128, Int16, Int32, Int64, Int8, UInt128, UInt16, UInt32, UInt64, UInt8}) in Base at int.jl:93
+## [3] /(x::Union{Integer, Complex{&lt;:Union{Integer, Rational}}}, y::Rational) in Base at rational.jl:345
+## [4] /(x::Union{Int16, Int32, Int8, UInt16, UInt32, UInt8}, y::BigInt) in Base.GMP at gmp.jl:545
+## [5] /(c::Union{UInt16, UInt32, UInt8}, x::BigFloat) in Base.MPFR at mpfr.jl:433
+## [6] /(c::Union{Int16, Int32, Int8}, x::BigFloat) in Base.MPFR at mpfr.jl:445
+## [7] /(c::Union{Float16, Float32, Float64}, x::BigFloat) in Base.MPFR at mpfr.jl:457
+## [8] /(A::Union{LinearAlgebra.AbstractTriangular, StridedMatrix}, D::Diagonal) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\diagonal.jl:494
+## [9] /(X::StridedArray{P}, y::P) where P&lt;:Dates.Period in Dates at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\deprecated.jl:44
+## [10] /(X::StridedArray{P}, y::Real) where P&lt;:Dates.Period in Dates at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\deprecated.jl:44
+## [11] /(x::Union{SparseArrays.SparseVector{Tv, Ti}, SubArray{Tv, 1, &lt;:SparseArrays.AbstractSparseVector{Tv, Ti}, Tuple{Base.Slice{Base.OneTo{Int64}}}, false}, SubArray{Tv, 1, &lt;:SparseArrays.AbstractSparseMatrixCSC{Tv, Ti}, Tuple{Base.Slice{Base.OneTo{Int64}}, Int64}, false}} where {Tv, Ti}, a::Number) in SparseArrays at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\SparseArrays\src\sparsevector.jl:1476
+## [12] /(A::Tridiagonal, B::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\tridiag.jl:744
+## [13] /(z::Complex, x::Real) in Base at complex.jl:346
+## [14] /(A::SparseArrays.AbstractSparseMatrixCSC, D::Diagonal) in SparseArrays at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\SparseArrays\src\linalg.jl:152
+## [15] /(D::Diagonal, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\diagonal.jl:192
+## [16] /(Da::Diagonal, Db::Diagonal) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\diagonal.jl:451
+## [17] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::Transpose{&lt;:Any, &lt;:AbstractMatrix}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:322
+## [18] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2576
+## [19] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2577
+## [20] /(B::Adjoint{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization{&lt;:Real}}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:140
+## [21] /(B::Adjoint{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:142
+## [22] /(adjA::Adjoint{&lt;:Any, &lt;:AbstractVector}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:441
+## [23] /(adjB::Adjoint{T, &lt;:AbstractVector} where T, adjF::Adjoint{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:117
+## [24] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::AbstractMatrix) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:320
+## [25] /(adjA::Adjoint{&lt;:Any, &lt;:AbstractMatrix}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:442
+## [26] /(x::P, y::P) where P&lt;:Dates.Period in Dates at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\periods.jl:82
+## [27] /(x::P, y::Real) where P&lt;:Dates.Period in Dates at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\periods.jl:83
+## [28] /(J1::UniformScaling, J2::UniformScaling) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:267
+## [29] /(J::UniformScaling, A::AbstractMatrix) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:268
+## [30] /(J::UniformScaling, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:273
+## [31] /(A::LowerTriangular, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:869
+## [32] /(A::LowerTriangular, B::LowerTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1572
+## [33] /(A::LowerTriangular, B::UnitLowerTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1586
+## [34] /(A::SymTridiagonal, B::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\tridiag.jl:213
+## [35] /(x::Rational, y::Union{Integer, Complex{&lt;:Union{Integer, Rational}}, Rational}) in Base at rational.jl:344
+## [36] /(a::R, z::S) where {R&lt;:Real, S&lt;:Complex} in Base at complex.jl:345
+## [37] /(x::RObject, y::RObject) in RCall at C:\Users\Diego\.julia\packages\RCall\iMDW2\src\operators.jl:6
+## [38] /(x::Number, B::BitArray) in Base at bitarray.jl:1201
+## [39] /(::Number, ::Missing) in Base at missing.jl:124
+## [40] /(x::Number, v::AbstractVector) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\generic.jl:1154
+## [41] /(A::UnitUpperTriangular, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:871
+## [42] /(A::UnitUpperTriangular, B::UpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1607
+## [43] /(A::UnitUpperTriangular, B::UnitUpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1621
+## [44] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitUpperTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
+## [45] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitUpperTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
+## [46] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitLowerTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
+## [47] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitLowerTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
+## [48] /(u::Transpose{T, &lt;:AbstractVector} where T, A::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2580
+## [49] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UpperTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
+## [50] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UpperTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
+## [51] /(B::Transpose{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization{&lt;:Real}}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:141
+## [52] /(B::AbstractMatrix, F::Transpose{&lt;:Any, &lt;:Factorization{&lt;:Real}}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:138
+## [53] /(B::Transpose{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:143
+## [54] /(B::AbstractMatrix, F::Transpose{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:139
+## [55] /(u::Transpose{T, &lt;:AbstractVector} where T, A::Adjoint{&lt;:Any, &lt;:AbstractMatrix}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:323
+## [56] /(trA::Transpose{&lt;:Any, &lt;:AbstractVector}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:443
+## [57] /(B::Transpose{T, &lt;:AbstractVector} where T, adjF::Adjoint{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:118
+## [58] /(trA::Transpose{&lt;:Any, &lt;:AbstractMatrix}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:447
+## [59] /(A::AbstractMatrix, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:436
+## [60] /(u::Transpose{T, &lt;:AbstractVector} where T, A::LowerTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
+## [61] /(u::Transpose{T, &lt;:AbstractVector} where T, A::LowerTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
+## [62] /(u::Transpose{T, &lt;:AbstractVector} where T, A::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2579
+## [63] /(u::Transpose{T, &lt;:AbstractVector} where T, A::AbstractMatrix) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:321
+## [64] /(a::ChainRulesCore.AbstractThunk, b) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\thunks.jl:32
+## [65] /(z::ChainRulesCore.AbstractZero, ::Any) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\abstract_zero.jl:25
+## [66] /(A::Union{BitMatrix, BitVector}, B::Union{BitMatrix, BitVector}) in Base at bitarray.jl:1197
+## [67] /(B::BitArray, x::Number) in Base at bitarray.jl:1200
+## [68] /(r::AbstractRange{&lt;:P}, x::P) where P&lt;:Dates.Period in Dates at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\ranges.jl:67
+## [69] /(x::AbstractIrrational, y::AbstractIrrational) in Base at irrationals.jl:158
+## [70] /(H::UpperHessenberg, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:116
+## [71] /(H::UpperHessenberg, x::UniformScaling) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:116
+## [72] /(A::AbstractMatrix, J::UniformScaling) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:270
+## [73] /(v::AbstractVector, J::UniformScaling) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:271
+## [74] /(H::UpperHessenberg, x::Diagonal) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:116
+## [75] /(H::UpperHessenberg, U::UpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:136
+## [76] /(H::UpperHessenberg, U::UnitUpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:143
+## [77] /(H::UpperHessenberg, B::Bidiagonal) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:183
+## [78] /(A::Hermitian, x::Real) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\symmetric.jl:639
+## [79] /(A::Symmetric, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\symmetric.jl:638
+## [80] /(A::UpperTriangular, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:869
+## [81] /(A::UpperTriangular, B::UpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1600
+## [82] /(A::UpperTriangular, B::UnitUpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1614
+## [83] /(x::Base.TwicePrecision, v::Number) in Base at twiceprecision.jl:315
+## [84] /(x::Base.TwicePrecision, y::Base.TwicePrecision) in Base at twiceprecision.jl:319
+## [85] /(r::StepRangeLen{&lt;:Real, &lt;:Base.TwicePrecision}, x::Real) in Base at twiceprecision.jl:524
+## [86] /(A::Bidiagonal, B::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\bidiag.jl:375
+## [87] /(B::Union{Array{Complex{T}, 1}, Array{Complex{T}, 2}}, F::Factorization{T}) where T&lt;:Union{Float32, Float64} in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:96
+## [88] /(B::AbstractMatrix, F::Union{Adjoint{&lt;:Any, &lt;:Factorization}, Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:110
+## [89] /(A::UnitLowerTriangular, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:871
+## [90] /(A::AbstractArray, B::Number) in Base at arraymath.jl:55
+## [91] /(A::UnitLowerTriangular, B::LowerTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1579
+## [92] /(A::AbstractVector, B::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1672
+## [93] /(A::AbstractMatrix, B::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1672
+## [94] /(A::UnitLowerTriangular, B::UnitLowerTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1593
+## [95] /(A::AbstractVector, B::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1664
+## [96] /(A::AbstractMatrix, B::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1664
+## [97] /(A::AbstractVecOrMat, B::AbstractVecOrMat) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\generic.jl:1148
+## [98] /(x::Float16, y::Float16) in Base at float.jl:406
+## [99] /(x::Float64, y::Float64) in Base at float.jl:408
+## [100] /(x::BigFloat, c::Union{UInt16, UInt32, UInt8}) in Base.MPFR at mpfr.jl:428
+## [101] /(x::BigFloat, c::Union{Int16, Int32, Int8}) in Base.MPFR at mpfr.jl:440
+## [102] /(x::BigFloat, c::Union{Float16, Float32, Float64}) in Base.MPFR at mpfr.jl:452
+## [103] /(x::BigFloat, y::BigFloat) in Base.MPFR at mpfr.jl:421
+## [104] /(x::BigFloat, c::BigInt) in Base.MPFR at mpfr.jl:464
+## [105] /(z::ComplexF64, w::ComplexF64) in Base at complex.jl:381
+## [106] /(z::Complex{T}, w::Complex{T}) where T&lt;:Union{Float16, Float32} in Base at complex.jl:372
+## [107] /(a::Complex{T}, b::Complex{T}) where T&lt;:Real in Base at complex.jl:348
+## [108] /(x::Float32, y::Float32) in Base at float.jl:407
+## [109] /(x::ChainRulesCore.NotImplemented, ::ChainRulesCore.NotImplemented) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\notimplemented.jl:44
+## [110] /(::Any, x::ChainRulesCore.NotImplemented) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\notimplemented.jl:43
+## [111] /(x::ChainRulesCore.NotImplemented, ::Any) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\notimplemented.jl:42
+## [112] /(x::BigInt, y::Union{Int16, Int32, Int8, UInt16, UInt32, UInt8}) in Base.GMP at gmp.jl:544
+## [113] /(x::BigInt, y::BigInt) in Base.GMP at gmp.jl:495
+## [114] /(x::T, y::T) where T&lt;:Integer in Base at int.jl:91
+## [115] /(x::T, y::T) where T&lt;:Number in Base at promotion.jl:457
+## [116] /(x::Number, y::Number) in Base at promotion.jl:382
+## [117] /(::Missing, ::Number) in Base at missing.jl:123
+## [118] /(::Missing, ::Missing) in Base at missing.jl:122
+```
+
+
+---
+
+## More on coding practices and efficiency
+
+See [JuliaPraxis](https://github.com/JuliaPraxis) for best practices for naming, spacing, comments, etc
+
+See more [Performance tips](https://docs.julialang.org/en/v1/manual/performance-tips) from Julia Documentation
+
+
+---
+
+## .blue[Course roadmap]
+
+This concludes Unit 1. Up next
+
+1. .gray[Intro to Scientific Computing]
+2. **Numerical operations and representations** 
+   1. **Numerical arithmetic** `\(\leftarrow\)`
+   2. .gold[Numerical differentiation and integration]
+   3. .gold[Function approximation]
+3. Systems of equations
+4. Optimization
+5. Structural estimation
 
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
