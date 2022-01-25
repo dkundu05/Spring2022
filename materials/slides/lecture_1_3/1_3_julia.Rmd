@@ -1206,7 +1206,7 @@ end
 
 ---
 
-## Generic functions
+## Generic functions: type stability
 
 No! t1 is *not type stable*
 
@@ -1453,7 +1453,7 @@ When you write a function that's type stable, you are actually writing many diff
 
 If your function isn't type stable, the optimized method may not be used
 
-This is why Julia can achieve C speeds: it compiles to C (or faster) code
+This is why Julia can achieve C speed: it compiles to C (or faster) code
 
 ---
 
