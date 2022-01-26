@@ -12,7 +12,7 @@ output:
       highlightStyle: github
       highlightLines: true
       countIncrementalSlides: false
-      ratio: '3:2'
+      ratio: '16:9'
 ---
 exclude: true
 ```{r setup}
@@ -34,12 +34,13 @@ knitr::opts_hooks$set(fig.callout = function(options) {
 
 ```
 
+
 ```{r xaringan-themer, include=FALSE, warning=FALSE}
 library(xaringanthemer)
 style_mono_accent(
   base_color = "#8E6F3E", 
   header_font_google = google_font("Josefin Sans"),
-  text_font_size = "32px",
+  text_font_size = "28px",
   colors = c(
     red = "#f34213",
     gold = "#CFB991",
@@ -51,6 +52,8 @@ style_mono_accent(
 
 extra_css <- list(
   ".small" = list("font-size" = "90%"),
+  ".big" = list("font-size" = "125%"),
+  ".footnote" = list("font-size" = "60%"), 
   ".full-width" = list(
     display = "flex",
     width   = "100%",
