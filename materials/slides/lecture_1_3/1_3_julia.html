@@ -296,7 +296,7 @@ but a lot of this ports to Python, MATLAB, etc&lt;sup&gt;1&lt;/sup&gt;
 We will review
 
 1. Types
-2. Iteration
+2. Iterating
 3. Broadcasting/vectorization
 4. Scope
 5. Generic functions
@@ -304,6 +304,12 @@ We will review
 
 
 .footnote[&lt;sup&gt;1&lt;/sup&gt;See [https://cheatsheets.quantecon.org](https://cheatsheets.quantecon.org)]
+
+---
+
+class: inverse, center, middle
+
+# 1. Types
 
 ---
 
@@ -745,7 +751,7 @@ A `Dictionary` is the last main container type. They are like arrays but are ind
 
 
 ```julia
-d1 = Dict("class" =&gt; "AEM7130", "grade" =&gt; 97);
+d1 = Dict("class" =&gt; "AAAA999", "grade" =&gt; 97);
 typeof(d1)
 ```
 
@@ -771,7 +777,7 @@ d1["class"]
 ```
 
 ```
-## "AEM7130"
+## "AAAA999"
 ```
 
 ```julia
@@ -805,9 +811,15 @@ values_d1 = values(d1)
 
 ```
 ## ValueIterator for a Dict{String, Any} with 2 entries. Values:
-##   "AEM7130"
+##   "AAAA999"
 ##   97
 ```
+
+---
+
+class: inverse, center, middle
+
+# 2. Iteration
 
 ---
 
@@ -827,15 +839,14 @@ end
 ```
 
 ```
-## We drew a 0.8247227329122151.
-## We drew a 0.41954394564971.
-## We drew a 0.7338209660484674.
-## We drew a 0.2634959228001874.
-## We drew a 0.8790571954490457.
-## We drew a 0.7230963200163567.
-## We drew a 0.23627640919794224.
-## We drew a 0.9480017578757083.
-## We drew a 0.9763580625222854.
+## We drew a 0.6150689635021823.
+## We drew a 0.8643668827452535.
+## We drew a 0.23762547417559798.
+## We drew a 0.716897835638652.
+## We drew a 0.8394315742812885.
+## We drew a 0.34123143963065117.
+## We drew a 0.4513829421715939.
+## We drew a 0.21297332601307362.
 ```
 
 ---
@@ -851,6 +862,14 @@ while rand() &gt; 0.5
     println("We drew a $random_number.")
   end
 end
+```
+
+```
+## We drew a 0.6184140670660379.
+## We drew a 0.5125558305638391.
+## We drew a 0.607945094066154.
+## We drew a 0.47404209932241825.
+## We drew a 0.9091511454718327.
 ```
 
 ---
@@ -891,7 +910,7 @@ end
 ```
 
 ```
-## AEM7130
+## AAAA999
 ## 97
 ```
 
@@ -936,7 +955,7 @@ using BenchmarkTools
 ```
 
 ```
-##   25.100 ns (1 allocation: 112 bytes)
+##   20.240 ns (1 allocation: 112 bytes)
 ```
 
 ```julia
@@ -944,7 +963,7 @@ using BenchmarkTools
 ```
 
 ```
-##   1.800 ns (0 allocations: 0 bytes)
+##   0.800 ns (0 allocations: 0 bytes)
 ```
 
 The `Iterator` approach is faster and allocates no memory
@@ -1127,6 +1146,12 @@ Use this (and the compact nested loop) sparingly since it's hard to follow
 
 ---
 
+class: inverse, center, middle
+
+# 3. Broadcating/Vectorization
+
+---
+
 ## Vectorization
 
 Iterated operations element by element is usually an inefficient approach
@@ -1196,25 +1221,23 @@ function show_fuse_speed(x)
 end
 ```
 
-- The top one is vectorized for the operations
+- The top one is just a normal, non-vectorized call
 - The `@.` in the bottom one vectorizes everything in one swoop: the function call, the operation, and the assignment to a variable
 
 ---
 
 ## Dot syntax: broadcasting/vectorization
 
-First, precompile the functions
+First, precompile&lt;sup&gt;.blue[\*]&lt;/sup&gt; the functions
 
 
 ```julia
 x = rand(10^6);
-@time show_vec_speed(x);
-@time show_fuse_speed(x);
+show_vec_speed(x);
+show_fuse_speed(x);
 ```
 
---
-
-.blue[*Just-in-time compilation* (JIT) is one of the tricks Julia does to make things run faster. It "translates" your code to machine language once and uses that every time you run it again]
+.footnote[.blue[\* *Just-in-time compilation* (JIT) is one of the tricks Julia does to make things run faster.] It translates your code to processor language the first time you run it and uses the translated version every time you call it again. Here, we run the functions once so that compiling doesn't add to our measure of running time in the next slide.]
 
 ---
 
@@ -1224,138 +1247,139 @@ Then, let's run and time it
 
 
 ```julia
-@time show_vec_speed(x)
+@btime show_vec_speed(x)
 ```
 
 ```
-##   0.026681 seconds (13 allocations: 45.777 MiB, 33.09% gc time)
-```
-
-```
-## 1-element Vector{Vector{Float64}}:
-##  [13.947816239077262, 3.5631978133965223, 2.5187747800504776, 5.7225671045096735, 0.5744876892954576, 5.1336885419701, 10.457184615775692, 6.071183877846761, 5.374340578206351, 2.054958849037614  …  0.4336645042207751, 5.177344172945268, 4.555194912920591, 0.8194552510266924, 7.527936567968595, 2.5216972310975105, 13.21513679992367, 4.417596861827281, 0.7381607505286636, 9.970846590925115]
-```
-
-```julia
-@time show_fuse_speed(x)
-```
-
-```
-##   0.012246 seconds (3 allocations: 7.630 MiB, 74.42% gc time)
+##   8.840 ms (13 allocations: 45.78 MiB)
 ```
 
 ```
 ## 1-element Vector{Vector{Float64}}:
-##  [13.947816239077262, 3.5631978133965223, 2.5187747800504776, 5.7225671045096735, 0.5744876892954576, 5.1336885419701, 10.457184615775692, 6.071183877846761, 5.374340578206351, 2.054958849037614  …  0.4336645042207751, 5.177344172945268, 4.555194912920591, 0.8194552510266924, 7.527936567968595, 2.5216972310975105, 13.21513679992367, 4.417596861827281, 0.7381607505286636, 9.970846590925115]
+##  [11.200110575553275, 4.257544165286475, 13.142919633751378, 0.23727039770739017, 2.620762903636401, 0.8861875299631449, 7.7077064402205115, 0.3298974133266781, 8.382048103111549, 3.5265035299592027  …  1.098700719217398, 5.0157369934653335, 0.4030970487496418, 11.187160820527232, 7.421693721308948, 0.2152022305053397, 4.731189747089373, 12.976812946666296, 4.10522860647579, 1.7215242614240955]
 ```
 
-Full vectorization using `@.` is 10x faster with 1/6 of the memory allocation
+```julia
+@btime show_fuse_speed(x)
+```
+
+```
+##   1.305 ms (3 allocations: 7.63 MiB)
+```
+
+```
+## 1-element Vector{Vector{Float64}}:
+##  [11.200110575553275, 4.257544165286475, 13.142919633751378, 0.23727039770739017, 2.620762903636401, 0.8861875299631449, 7.7077064402205115, 0.3298974133266781, 8.382048103111549, 3.5265035299592027  …  1.098700719217398, 5.0157369934653335, 0.4030970487496418, 11.187160820527232, 7.421693721308948, 0.2152022305053397, 4.731189747089373, 12.976812946666296, 4.10522860647579, 1.7215242614240955]
+```
+
+Full vectorization using `@.` is about 5--10x faster with 1/6 of the memory allocation
 
 ---
 
 ## Dot syntax: broadcasting/vectorization
 
-Not pre-allocated:
+Let's see another example
 
 
 ```julia
-h(y,z) = y^2 + sin(z);   # function to evaluate
-y = 1:2:1e6+1;           # input y
-z = rand(length(y));     # input z
+h(y,z) = y^2 + sin(z); # function to evaluate
+y = 1:2:1e6+1;         # input y
+z = rand(length(y));   # input z
 ```
 
 ---
 
 ## Dot syntax: broadcasting/vectorization
 
-Here we are vectorizing the *function call*
+Here we are vectorizing the *function call* only
 
 
 ```julia
-# precompile h so first timer isn't picking up on compilation time
-h(1,2);
+# precompile h 
+h_out_1 = h.(y,z);
 ```
 
 
 ```julia
-@time h_out_1 = h.(y,z)    # evaluate h.(y,z) and time
+@btime h_out_1 = h.(y,z) # evaluate h.(y,z) and measure time
 ```
 
 ```
-##   0.071511 seconds (217.48 k allocations: 15.152 MiB, 93.46% compilation time)
+##   3.746 ms (4 allocations: 3.81 MiB)
 ```
 
 ```
 ## 500001-element Vector{Float64}:
-##    1.646473371686329
-##    9.550373995967727
-##   25.18535356707042
-##   49.75676756941773
-##   81.49017599455534
-##  121.70599255879272
-##  169.56853539258532
-##  225.58123383404813
-##  289.3122464388625
-##  361.4965135832412
+##    1.0199354131231169
+##    9.492897718441197
+##   25.02271776294974
+##   49.79790637800813
+##   81.05903644332469
+##  121.59178616479366
+##  169.48137723604592
+##  225.24357962714373
+##  289.75524895042525
+##  361.69360470822255
 ##    ⋮
-##    9.999700002257589e11
-##    9.999740001692437e11
-##    9.999780001210995e11
-##    9.999820000812405e11
-##    9.999860000497021e11
-##    9.999900000258047e11
-##    9.999940000095876e11
-##    9.999980000013203e11
-##    1.0000020000017223e12
+##    9.999700002254734e11
+##    9.999740001693994e11
+##    9.999780001213947e11
+##    9.99982000081643e11
+##    9.999860000495405e11
+##    9.999900000253057e11
+##    9.999940000096257e11
+##    9.999980000012345e11
+##    1.000002000001419e12
 ```
 
 ---
 ## Dot syntax: broadcasting/vectorization
 
-Here we are vectorizing the *function call* **and** *assignment*
+Here we are vectorizing the *function call* **and** *assignment*. With pre-allocated memory and vectorized assignment, we get an additional performance gain
 
 
 ```julia
-h_out_2 = similar(h_out_1) # This pre-alocates memory for an object of the same type and size
+h_out_2 = similar(h_out_1) # This pre-allocates memory for an object of the same type and size
 ```
 
 
 ```julia
-@time h_out_2 .= h.(y,z)
+@btime h_out_2 .= h.(y,z)
 ```
 
 ```
-##   0.035146 seconds (48.63 k allocations: 2.340 MiB, 76.47% compilation time)
+##   2.916 ms (2 allocations: 128 bytes)
 ```
 
 ```
 ## 500001-element Vector{Float64}:
-##    1.646473371686329
-##    9.550373995967727
-##   25.18535356707042
-##   49.75676756941773
-##   81.49017599455534
-##  121.70599255879272
-##  169.56853539258532
-##  225.58123383404813
-##  289.3122464388625
-##  361.4965135832412
+##    1.0199354131231169
+##    9.492897718441197
+##   25.02271776294974
+##   49.79790637800813
+##   81.05903644332469
+##  121.59178616479366
+##  169.48137723604592
+##  225.24357962714373
+##  289.75524895042525
+##  361.69360470822255
 ##    ⋮
-##    9.999700002257589e11
-##    9.999740001692437e11
-##    9.999780001210995e11
-##    9.999820000812405e11
-##    9.999860000497021e11
-##    9.999900000258047e11
-##    9.999940000095876e11
-##    9.999980000013203e11
-##    1.0000020000017223e12
+##    9.999700002254734e11
+##    9.999740001693994e11
+##    9.999780001213947e11
+##    9.99982000081643e11
+##    9.999860000495405e11
+##    9.999900000253057e11
+##    9.999940000096257e11
+##    9.999980000012345e11
+##    1.000002000001419e12
 ```
 
 ---
 ## Dot syntax: broadcasting/vectorization
 
-Here we are vectorizing the *function call* **and** *assignment* **and** even the *operations* inside the function
+Here we are again vectorizing the *function call* **and** *assignment*. But the `@.` syntax helps us write clear code because we only need to use it once instead of adding `.`'s everywhere
+
 
 
 ```julia
@@ -1363,80 +1387,42 @@ h_out_3 = similar(h_out_1)
 ```
 
 ```julia
-@time @. h_out_3 = h(y,z)
+@btime @. h_out_3 = h(y,z)
 ```
 
 ```
-##   0.004762 seconds (2 allocations: 128 bytes)
+##   2.970 ms (2 allocations: 128 bytes)
 ```
 
 ```
 ## 500001-element Vector{Float64}:
-##    1.646473371686329
-##    9.550373995967727
-##   25.18535356707042
-##   49.75676756941773
-##   81.49017599455534
-##  121.70599255879272
-##  169.56853539258532
-##  225.58123383404813
-##  289.3122464388625
-##  361.4965135832412
+##    1.0199354131231169
+##    9.492897718441197
+##   25.02271776294974
+##   49.79790637800813
+##   81.05903644332469
+##  121.59178616479366
+##  169.48137723604592
+##  225.24357962714373
+##  289.75524895042525
+##  361.69360470822255
 ##    ⋮
-##    9.999700002257589e11
-##    9.999740001692437e11
-##    9.999780001210995e11
-##    9.999820000812405e11
-##    9.999860000497021e11
-##    9.999900000258047e11
-##    9.999940000095876e11
-##    9.999980000013203e11
-##    1.0000020000017223e12
+##    9.999700002254734e11
+##    9.999740001693994e11
+##    9.999780001213947e11
+##    9.99982000081643e11
+##    9.999860000495405e11
+##    9.999900000253057e11
+##    9.999940000096257e11
+##    9.999980000012345e11
+##    1.000002000001419e12
 ```
 
 ---
 
-## Dot syntax: broadcasting/vectorization
+class: inverse, center, middle
 
-The `@.` macro saves us from typing a bunch of `.`
-
-
-```julia
-h_vec(y,z) = y.^2 + sin.(z); h_vec(1,2); h_out_4 = similar(h_out_1)
-```
-
-```julia
-@time h_out_4 .= h.(y,z)
-```
-
-```
-##   0.004391 seconds (2 allocations: 128 bytes)
-```
-
-```
-## 500001-element Vector{Float64}:
-##    1.646473371686329
-##    9.550373995967727
-##   25.18535356707042
-##   49.75676756941773
-##   81.49017599455534
-##  121.70599255879272
-##  169.56853539258532
-##  225.58123383404813
-##  289.3122464388625
-##  361.4965135832412
-##    ⋮
-##    9.999700002257589e11
-##    9.999740001692437e11
-##    9.999780001210995e11
-##    9.999820000812405e11
-##    9.999860000497021e11
-##    9.999900000258047e11
-##    9.999940000095876e11
-##    9.999980000013203e11
-##    1.0000020000017223e12
-```
-
+# 4. Scope
 
 ---
 
@@ -1549,6 +1535,67 @@ Since the outside `zz` has global scope, the locally scoped variables in the loo
 
 ## Scope
 
+But hold on. If you copy and paste the previous code and run it in REPL, it will actually return 10, not 0. `\(^{*}\)` Was it all a lie?!
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/scope_vscode.png"&gt;
+&lt;/div&gt;
+
+
+.footnote[*Thanks, Chad, for pointing that out.]
+
+---
+
+## Scope
+
+Actually, there are two types of local scope: **soft** and **hard**
+
+Here is how Julia `1.7` applies them
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/scope_1.png"&gt;
+&lt;/div&gt;
+
+---
+
+## Scope
+
+When you assign `x = 10`
+
+- If `x` is already defined in the local scope: the existing local `x` is assigned
+--
+
+- Otherwise
+   - In **hard local scope**: a new local `x` is created and assigned
+   - In **soft local scope**, it depends on whether a global `x` is defined...
+--
+
+      - If there is no global `x`: a new local `x` is created and assigned
+      - If there is a global `x`: the assignment is *ambiguous*...
+--
+         - In *non-interactive* context (running a file): a new local `x` is created and assigned
+         - In *interactive* context (REPL, notebooks): the global `x` is assigned
+---
+
+## Scope
+
+So here is why we get different results:
+
+- The `for` loop written in global (e.g.: outside of a function) has **soft local scope**
+
+- When I run the code in a file to generate these slides, that `for` loop is in a *non-interactive* context `\(\rightarrow\)` a new local `zz` is created and assigned  
+
+- When I run it in VS Code/REPL, it's in an *interactive* context `\(\rightarrow\)` the global `zz` is assigned  
+
+--
+
+(This is a bit confusing, I know...)
+
+---
+
+
+## Scope
+
 Generally, you want to avoid global scope because it can cause conflicts, slowness, etc. But you can use `global` to force it if you want something to have global scope
 
 
@@ -1625,6 +1672,11 @@ wrapper()
 ## zzz = 10
 ```
 
+---
+
+class: inverse, center, middle
+
+# 5. Generic programming
 
 ---
 
@@ -1710,8 +1762,8 @@ We can see this when calling the macro `@code_warntype` where it reports `t1` at
 Julia now can't assume `s`'s type and produce pure integer or floating point code. This leads to **performance degradation**
 
 &lt;div align="center"&gt;
-  &lt;img src="figures/t1_codewarn.png" height=150&gt;
-  &lt;img src="figures/t2_codewarn.png" height=150&gt;
+  &lt;img src="figures/t1_codewarn.png" height=200&gt;
+  &lt;img src="figures/t2_codewarn.png" height=200&gt;
 &lt;/div&gt;
 
 ---
@@ -1757,18 +1809,6 @@ You can check where types are in the hierarchy (with the subtype operator `&lt;:
 
 ```
 ## false
-```
-
-```julia
-@show Number &lt;: Any
-```
-
-```
-## Number &lt;: Any = true
-```
-
-```
-## true
 ```
 
 ---
@@ -1844,13 +1884,13 @@ Custom types are a *handy and elegant way of organizing your program*
 
 - Then, instead of having a function call
 
-```
+```julia
 RunMyModel(param1, param2, param3, param4, param5);
 ```
 
 - You call
 
-```
+```julia
 RunMyModel(modelParameters);
 ```
 
@@ -1984,8 +2024,8 @@ sametypes(y)
 ```
 
 &lt;div align="center"&gt;
-  &lt;img src="figures/generic_codewarn_float.png" height=125&gt;
-  &lt;img src="figures/generic_codewarn_int.png" height=125&gt;
+  &lt;img src="figures/generic_codewarn_float.png" height=200&gt;
+  &lt;img src="figures/generic_codewarn_int.png" height=200&gt;
 &lt;/div&gt;
 
 --
@@ -1994,31 +2034,37 @@ There's a lot of other functions out there that help with writing flexible, type
 
 ---
 
-## Multiple dispatch
+class: inverse, center, middle
 
-#### Why type stability really matters: multiple dispatch
-
-Neat thing about Julia: the same function name can perform different operations depending on the underlying type of the inputs
-
-A function specifies different **methods**, each of which operates on a specific set of types
+# 6. Multiple dispatch
 
 ---
 
 ## Multiple dispatch
 
-When you write a function that's type stable, you are actually writing many different methods, each of which are optimized for certain types
+#### Why type stability really matters: multiple dispatch
+
+This means that the same function name can perform different operations depending on the type of the inputs it receives
+
+In practice, a function specifies different **methods**, each of which operates on a specific set of types
+
+---
+
+## Multiple dispatch
+
+When you write a function that is type stable, you are actually writing many different methods, each of which are optimized for certain types
 
 --
 
 If your function isn't type stable, the optimized method may not be used
 
-This is why Julia can achieve C speed: it compiles to C (or faster) code
+This is why Julia can achieve C speed: it compiles optmized code for each type and doesn't need to waste time "guessing" a variable's type
 
 ---
 
 ## Multiple dispatch
 
-`/` has 103 different methods depending on the input types, these are 103 specialized sets of codes
+`/` has 118 different methods for division depending on the input types! These are 103 specialized sets of codes
 
 
 ```julia
@@ -2027,103 +2073,103 @@ methods(/)
 
 ```
 ## # 118 methods for generic function "/":
-## [1] /(a, b::ChainRulesCore.AbstractThunk) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\thunks.jl:33
+## [1] /(a, b::ChainRulesCore.AbstractThunk) in ChainRulesCore at C:\Users\diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\thunks.jl:33
 ## [2] /(x::Union{Int128, Int16, Int32, Int64, Int8, UInt128, UInt16, UInt32, UInt64, UInt8}, y::Union{Int128, Int16, Int32, Int64, Int8, UInt128, UInt16, UInt32, UInt64, UInt8}) in Base at int.jl:93
 ## [3] /(x::Union{Integer, Complex{&lt;:Union{Integer, Rational}}}, y::Rational) in Base at rational.jl:345
 ## [4] /(x::Union{Int16, Int32, Int8, UInt16, UInt32, UInt8}, y::BigInt) in Base.GMP at gmp.jl:545
 ## [5] /(c::Union{UInt16, UInt32, UInt8}, x::BigFloat) in Base.MPFR at mpfr.jl:433
 ## [6] /(c::Union{Int16, Int32, Int8}, x::BigFloat) in Base.MPFR at mpfr.jl:445
 ## [7] /(c::Union{Float16, Float32, Float64}, x::BigFloat) in Base.MPFR at mpfr.jl:457
-## [8] /(A::Union{LinearAlgebra.AbstractTriangular, StridedMatrix}, D::Diagonal) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\diagonal.jl:494
-## [9] /(X::StridedArray{P}, y::P) where P&lt;:Dates.Period in Dates at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\deprecated.jl:44
-## [10] /(X::StridedArray{P}, y::Real) where P&lt;:Dates.Period in Dates at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\deprecated.jl:44
-## [11] /(x::Union{SparseArrays.SparseVector{Tv, Ti}, SubArray{Tv, 1, &lt;:SparseArrays.AbstractSparseVector{Tv, Ti}, Tuple{Base.Slice{Base.OneTo{Int64}}}, false}, SubArray{Tv, 1, &lt;:SparseArrays.AbstractSparseMatrixCSC{Tv, Ti}, Tuple{Base.Slice{Base.OneTo{Int64}}, Int64}, false}} where {Tv, Ti}, a::Number) in SparseArrays at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\SparseArrays\src\sparsevector.jl:1476
-## [12] /(A::Tridiagonal, B::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\tridiag.jl:744
+## [8] /(A::Union{LinearAlgebra.AbstractTriangular, StridedMatrix}, D::Diagonal) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\diagonal.jl:494
+## [9] /(X::StridedArray{P}, y::P) where P&lt;:Dates.Period in Dates at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\deprecated.jl:44
+## [10] /(X::StridedArray{P}, y::Real) where P&lt;:Dates.Period in Dates at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\deprecated.jl:44
+## [11] /(x::Union{SparseArrays.SparseVector{Tv, Ti}, SubArray{Tv, 1, &lt;:SparseArrays.AbstractSparseVector{Tv, Ti}, Tuple{Base.Slice{Base.OneTo{Int64}}}, false}, SubArray{Tv, 1, &lt;:SparseArrays.AbstractSparseMatrixCSC{Tv, Ti}, Tuple{Base.Slice{Base.OneTo{Int64}}, Int64}, false}} where {Tv, Ti}, a::Number) in SparseArrays at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\SparseArrays\src\sparsevector.jl:1476
+## [12] /(A::Tridiagonal, B::Number) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\tridiag.jl:744
 ## [13] /(z::Complex, x::Real) in Base at complex.jl:346
-## [14] /(A::SparseArrays.AbstractSparseMatrixCSC, D::Diagonal) in SparseArrays at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\SparseArrays\src\linalg.jl:152
-## [15] /(D::Diagonal, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\diagonal.jl:192
-## [16] /(Da::Diagonal, Db::Diagonal) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\diagonal.jl:451
-## [17] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::Transpose{&lt;:Any, &lt;:AbstractMatrix}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:322
-## [18] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2576
-## [19] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2577
-## [20] /(B::Adjoint{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization{&lt;:Real}}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:140
-## [21] /(B::Adjoint{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:142
-## [22] /(adjA::Adjoint{&lt;:Any, &lt;:AbstractVector}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:441
-## [23] /(adjB::Adjoint{T, &lt;:AbstractVector} where T, adjF::Adjoint{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:117
-## [24] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::AbstractMatrix) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:320
-## [25] /(adjA::Adjoint{&lt;:Any, &lt;:AbstractMatrix}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:442
-## [26] /(x::P, y::P) where P&lt;:Dates.Period in Dates at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\periods.jl:82
-## [27] /(x::P, y::Real) where P&lt;:Dates.Period in Dates at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\periods.jl:83
-## [28] /(J1::UniformScaling, J2::UniformScaling) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:267
-## [29] /(J::UniformScaling, A::AbstractMatrix) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:268
-## [30] /(J::UniformScaling, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:273
-## [31] /(A::LowerTriangular, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:869
-## [32] /(A::LowerTriangular, B::LowerTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1572
-## [33] /(A::LowerTriangular, B::UnitLowerTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1586
-## [34] /(A::SymTridiagonal, B::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\tridiag.jl:213
-## [35] /(x::Rational, y::Union{Integer, Complex{&lt;:Union{Integer, Rational}}, Rational}) in Base at rational.jl:344
-## [36] /(a::R, z::S) where {R&lt;:Real, S&lt;:Complex} in Base at complex.jl:345
-## [37] /(x::RObject, y::RObject) in RCall at C:\Users\Diego\.julia\packages\RCall\iMDW2\src\operators.jl:6
+## [14] /(A::SparseArrays.AbstractSparseMatrixCSC, D::Diagonal) in SparseArrays at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\SparseArrays\src\linalg.jl:152
+## [15] /(D::Diagonal, x::Number) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\diagonal.jl:192
+## [16] /(Da::Diagonal, Db::Diagonal) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\diagonal.jl:451
+## [17] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::Transpose{&lt;:Any, &lt;:AbstractMatrix}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:322
+## [18] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2576
+## [19] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2577
+## [20] /(B::Adjoint{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization{&lt;:Real}}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:140
+## [21] /(B::Adjoint{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:142
+## [22] /(adjA::Adjoint{&lt;:Any, &lt;:AbstractVector}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:441
+## [23] /(adjB::Adjoint{T, &lt;:AbstractVector} where T, adjF::Adjoint{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:117
+## [24] /(u::Adjoint{T, &lt;:AbstractVector} where T, A::AbstractMatrix) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:320
+## [25] /(adjA::Adjoint{&lt;:Any, &lt;:AbstractMatrix}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:442
+## [26] /(x::P, y::P) where P&lt;:Dates.Period in Dates at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\periods.jl:82
+## [27] /(x::P, y::Real) where P&lt;:Dates.Period in Dates at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\periods.jl:83
+## [28] /(J1::UniformScaling, J2::UniformScaling) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:267
+## [29] /(J::UniformScaling, A::AbstractMatrix) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:268
+## [30] /(J::UniformScaling, x::Number) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:273
+## [31] /(A::LowerTriangular, x::Number) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:869
+## [32] /(A::LowerTriangular, B::LowerTriangular) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1572
+## [33] /(A::LowerTriangular, B::UnitLowerTriangular) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1586
+## [34] /(z::ChainRulesCore.AbstractZero, ::Any) in ChainRulesCore at C:\Users\diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\abstract_zero.jl:25
+## [35] /(A::SymTridiagonal, B::Number) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\tridiag.jl:213
+## [36] /(x::Rational, y::Union{Integer, Complex{&lt;:Union{Integer, Rational}}, Rational}) in Base at rational.jl:344
+## [37] /(a::R, z::S) where {R&lt;:Real, S&lt;:Complex} in Base at complex.jl:345
 ## [38] /(x::Number, B::BitArray) in Base at bitarray.jl:1201
 ## [39] /(::Number, ::Missing) in Base at missing.jl:124
-## [40] /(x::Number, v::AbstractVector) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\generic.jl:1154
-## [41] /(A::UnitUpperTriangular, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:871
-## [42] /(A::UnitUpperTriangular, B::UpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1607
-## [43] /(A::UnitUpperTriangular, B::UnitUpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1621
-## [44] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitUpperTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
-## [45] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitUpperTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
-## [46] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitLowerTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
-## [47] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitLowerTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
-## [48] /(u::Transpose{T, &lt;:AbstractVector} where T, A::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2580
-## [49] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UpperTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
-## [50] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UpperTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
-## [51] /(B::Transpose{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization{&lt;:Real}}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:141
-## [52] /(B::AbstractMatrix, F::Transpose{&lt;:Any, &lt;:Factorization{&lt;:Real}}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:138
-## [53] /(B::Transpose{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:143
-## [54] /(B::AbstractMatrix, F::Transpose{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:139
-## [55] /(u::Transpose{T, &lt;:AbstractVector} where T, A::Adjoint{&lt;:Any, &lt;:AbstractMatrix}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:323
-## [56] /(trA::Transpose{&lt;:Any, &lt;:AbstractVector}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:443
-## [57] /(B::Transpose{T, &lt;:AbstractVector} where T, adjF::Adjoint{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:118
-## [58] /(trA::Transpose{&lt;:Any, &lt;:AbstractMatrix}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:447
-## [59] /(A::AbstractMatrix, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:436
-## [60] /(u::Transpose{T, &lt;:AbstractVector} where T, A::LowerTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
-## [61] /(u::Transpose{T, &lt;:AbstractVector} where T, A::LowerTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
-## [62] /(u::Transpose{T, &lt;:AbstractVector} where T, A::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2579
-## [63] /(u::Transpose{T, &lt;:AbstractVector} where T, A::AbstractMatrix) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:321
-## [64] /(a::ChainRulesCore.AbstractThunk, b) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\thunks.jl:32
-## [65] /(z::ChainRulesCore.AbstractZero, ::Any) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\abstract_zero.jl:25
+## [40] /(x::Number, v::AbstractVector) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\generic.jl:1154
+## [41] /(A::UnitUpperTriangular, x::Number) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:871
+## [42] /(A::UnitUpperTriangular, B::UpperTriangular) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1607
+## [43] /(A::UnitUpperTriangular, B::UnitUpperTriangular) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1621
+## [44] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitUpperTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
+## [45] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitUpperTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
+## [46] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitLowerTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
+## [47] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UnitLowerTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
+## [48] /(u::Transpose{T, &lt;:AbstractVector} where T, A::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2580
+## [49] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UpperTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
+## [50] /(u::Transpose{T, &lt;:AbstractVector} where T, A::UpperTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
+## [51] /(B::Transpose{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization{&lt;:Real}}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:141
+## [52] /(B::AbstractMatrix, F::Transpose{&lt;:Any, &lt;:Factorization{&lt;:Real}}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:138
+## [53] /(B::Transpose{T, &lt;:AbstractVector} where T, F::Transpose{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:143
+## [54] /(B::AbstractMatrix, F::Transpose{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:139
+## [55] /(u::Transpose{T, &lt;:AbstractVector} where T, A::Adjoint{&lt;:Any, &lt;:AbstractMatrix}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:323
+## [56] /(trA::Transpose{&lt;:Any, &lt;:AbstractVector}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:443
+## [57] /(B::Transpose{T, &lt;:AbstractVector} where T, adjF::Adjoint{&lt;:Any, &lt;:Factorization}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:118
+## [58] /(trA::Transpose{&lt;:Any, &lt;:AbstractMatrix}, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:447
+## [59] /(A::AbstractMatrix, F::Adjoint{&lt;:Any, &lt;:LU}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\lu.jl:436
+## [60] /(u::Transpose{T, &lt;:AbstractVector} where T, A::LowerTriangular{&lt;:Any, &lt;:Transpose}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2587
+## [61] /(u::Transpose{T, &lt;:AbstractVector} where T, A::LowerTriangular{&lt;:Any, &lt;:Adjoint}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2586
+## [62] /(u::Transpose{T, &lt;:AbstractVector} where T, A::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:2579
+## [63] /(u::Transpose{T, &lt;:AbstractVector} where T, A::AbstractMatrix) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\adjtrans.jl:321
+## [64] /(a::ChainRulesCore.AbstractThunk, b) in ChainRulesCore at C:\Users\diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\thunks.jl:32
+## [65] /(x::RObject, y::RObject) in RCall at C:\Users\diego\.julia\packages\RCall\iMDW2\src\operators.jl:6
 ## [66] /(A::Union{BitMatrix, BitVector}, B::Union{BitMatrix, BitVector}) in Base at bitarray.jl:1197
 ## [67] /(B::BitArray, x::Number) in Base at bitarray.jl:1200
-## [68] /(r::AbstractRange{&lt;:P}, x::P) where P&lt;:Dates.Period in Dates at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\ranges.jl:67
+## [68] /(r::AbstractRange{&lt;:P}, x::P) where P&lt;:Dates.Period in Dates at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\Dates\src\ranges.jl:67
 ## [69] /(x::AbstractIrrational, y::AbstractIrrational) in Base at irrationals.jl:158
-## [70] /(H::UpperHessenberg, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:116
-## [71] /(H::UpperHessenberg, x::UniformScaling) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:116
-## [72] /(A::AbstractMatrix, J::UniformScaling) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:270
-## [73] /(v::AbstractVector, J::UniformScaling) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:271
-## [74] /(H::UpperHessenberg, x::Diagonal) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:116
-## [75] /(H::UpperHessenberg, U::UpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:136
-## [76] /(H::UpperHessenberg, U::UnitUpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:143
-## [77] /(H::UpperHessenberg, B::Bidiagonal) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:183
-## [78] /(A::Hermitian, x::Real) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\symmetric.jl:639
-## [79] /(A::Symmetric, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\symmetric.jl:638
-## [80] /(A::UpperTriangular, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:869
-## [81] /(A::UpperTriangular, B::UpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1600
-## [82] /(A::UpperTriangular, B::UnitUpperTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1614
+## [70] /(H::UpperHessenberg, x::Number) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:116
+## [71] /(H::UpperHessenberg, x::UniformScaling) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:116
+## [72] /(A::AbstractMatrix, J::UniformScaling) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:270
+## [73] /(v::AbstractVector, J::UniformScaling) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\uniformscaling.jl:271
+## [74] /(H::UpperHessenberg, x::Diagonal) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:116
+## [75] /(H::UpperHessenberg, U::UpperTriangular) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:136
+## [76] /(H::UpperHessenberg, U::UnitUpperTriangular) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:143
+## [77] /(H::UpperHessenberg, B::Bidiagonal) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\hessenberg.jl:183
+## [78] /(A::Hermitian, x::Real) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\symmetric.jl:639
+## [79] /(A::Symmetric, x::Number) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\symmetric.jl:638
+## [80] /(A::UpperTriangular, x::Number) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:869
+## [81] /(A::UpperTriangular, B::UpperTriangular) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1600
+## [82] /(A::UpperTriangular, B::UnitUpperTriangular) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1614
 ## [83] /(x::Base.TwicePrecision, v::Number) in Base at twiceprecision.jl:315
 ## [84] /(x::Base.TwicePrecision, y::Base.TwicePrecision) in Base at twiceprecision.jl:319
 ## [85] /(r::StepRangeLen{&lt;:Real, &lt;:Base.TwicePrecision}, x::Real) in Base at twiceprecision.jl:524
-## [86] /(A::Bidiagonal, B::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\bidiag.jl:375
-## [87] /(B::Union{Array{Complex{T}, 1}, Array{Complex{T}, 2}}, F::Factorization{T}) where T&lt;:Union{Float32, Float64} in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:96
-## [88] /(B::AbstractMatrix, F::Union{Adjoint{&lt;:Any, &lt;:Factorization}, Factorization}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:110
-## [89] /(A::UnitLowerTriangular, x::Number) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:871
+## [86] /(A::Bidiagonal, B::Number) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\bidiag.jl:375
+## [87] /(B::Union{Array{Complex{T}, 1}, Array{Complex{T}, 2}}, F::Factorization{T}) where T&lt;:Union{Float32, Float64} in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:96
+## [88] /(B::AbstractMatrix, F::Union{Adjoint{&lt;:Any, &lt;:Factorization}, Factorization}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\factorization.jl:110
+## [89] /(A::UnitLowerTriangular, x::Number) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:871
 ## [90] /(A::AbstractArray, B::Number) in Base at arraymath.jl:55
-## [91] /(A::UnitLowerTriangular, B::LowerTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1579
-## [92] /(A::AbstractVector, B::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1672
-## [93] /(A::AbstractMatrix, B::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1672
-## [94] /(A::UnitLowerTriangular, B::UnitLowerTriangular) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1593
-## [95] /(A::AbstractVector, B::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1664
-## [96] /(A::AbstractMatrix, B::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1664
-## [97] /(A::AbstractVecOrMat, B::AbstractVecOrMat) in LinearAlgebra at C:\PROGRA~1\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\generic.jl:1148
+## [91] /(A::UnitLowerTriangular, B::LowerTriangular) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1579
+## [92] /(A::AbstractVector, B::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1672
+## [93] /(A::AbstractMatrix, B::Union{LowerTriangular, UpperTriangular}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1672
+## [94] /(A::UnitLowerTriangular, B::UnitLowerTriangular) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1593
+## [95] /(A::AbstractVector, B::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1664
+## [96] /(A::AbstractMatrix, B::Union{UnitLowerTriangular, UnitUpperTriangular}) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\triangular.jl:1664
+## [97] /(A::AbstractVecOrMat, B::AbstractVecOrMat) in LinearAlgebra at C:\Users\diego\AppData\Local\Programs\JULIA-~1.1\share\julia\stdlib\v1.7\LinearAlgebra\src\generic.jl:1148
 ## [98] /(x::Float16, y::Float16) in Base at float.jl:406
 ## [99] /(x::Float64, y::Float64) in Base at float.jl:408
 ## [100] /(x::BigFloat, c::Union{UInt16, UInt32, UInt8}) in Base.MPFR at mpfr.jl:428
@@ -2135,9 +2181,9 @@ methods(/)
 ## [106] /(z::Complex{T}, w::Complex{T}) where T&lt;:Union{Float16, Float32} in Base at complex.jl:372
 ## [107] /(a::Complex{T}, b::Complex{T}) where T&lt;:Real in Base at complex.jl:348
 ## [108] /(x::Float32, y::Float32) in Base at float.jl:407
-## [109] /(x::ChainRulesCore.NotImplemented, ::ChainRulesCore.NotImplemented) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\notimplemented.jl:44
-## [110] /(::Any, x::ChainRulesCore.NotImplemented) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\notimplemented.jl:43
-## [111] /(x::ChainRulesCore.NotImplemented, ::Any) in ChainRulesCore at C:\Users\Diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\notimplemented.jl:42
+## [109] /(x::ChainRulesCore.NotImplemented, ::ChainRulesCore.NotImplemented) in ChainRulesCore at C:\Users\diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\notimplemented.jl:44
+## [110] /(::Any, x::ChainRulesCore.NotImplemented) in ChainRulesCore at C:\Users\diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\notimplemented.jl:43
+## [111] /(x::ChainRulesCore.NotImplemented, ::Any) in ChainRulesCore at C:\Users\diego\.julia\packages\ChainRulesCore\IFusD\src\tangent_types\notimplemented.jl:42
 ## [112] /(x::BigInt, y::Union{Int16, Int32, Int8, UInt16, UInt32, UInt8}) in Base.GMP at gmp.jl:544
 ## [113] /(x::BigInt, y::BigInt) in Base.GMP at gmp.jl:495
 ## [114] /(x::T, y::T) where T&lt;:Integer in Base at int.jl:91

@@ -312,7 +312,7 @@ but a lot of this ports to Python, MATLAB, etc<sup>1</sup>
 We will review
 
 1. Types
-2. Iteration
+2. Iterating
 3. Broadcasting/vectorization
 4. Scope
 5. Generic functions
@@ -320,6 +320,12 @@ We will review
 
 
 .footnote[<sup>1</sup>See [https://cheatsheets.quantecon.org](https://cheatsheets.quantecon.org)]
+
+---
+
+class: inverse, center, middle
+
+# 1. Types
 
 ---
 
@@ -597,7 +603,7 @@ A `Dictionary` is the last main container type. They are like arrays but are ind
 --
 
 ```{julia}
-d1 = Dict("class" => "AEM7130", "grade" => 97);
+d1 = Dict("class" => "AAAA999", "grade" => 97);
 typeof(d1)
 ```
 
@@ -628,6 +634,12 @@ If you just want all the keys or all the values, you can use these base function
 keys_d1 = keys(d1)
 values_d1 = values(d1)
 ```
+
+---
+
+class: inverse, center, middle
+
+# 2. Iteration
 
 ---
 
@@ -846,6 +858,12 @@ Use this (and the compact nested loop) sparingly since it's hard to follow
 
 ---
 
+class: inverse, center, middle
+
+# 3. Broadcating/Vectorization
+
+---
+
 ## Vectorization
 
 Iterated operations element by element is usually an inefficient approach
@@ -903,24 +921,22 @@ function show_fuse_speed(x)
 end
 ```
 
-- The top one is vectorized for the operations
+- The top one is just a normal, non-vectorized call
 - The `@.` in the bottom one vectorizes everything in one swoop: the function call, the operation, and the assignment to a variable
 
 ---
 
 ## Dot syntax: broadcasting/vectorization
 
-First, precompile the functions
+First, precompile<sup>.blue[\*]</sup> the functions
 
 ```{julia}
 x = rand(10^6);
-@time show_vec_speed(x);
-@time show_fuse_speed(x);
+show_vec_speed(x);
+show_fuse_speed(x);
 ```
 
---
-
-.blue[*Just-in-time compilation* (JIT) is one of the tricks Julia does to make things run faster. It "translates" your code to machine language once and uses that every time you run it again]
+.footnote[.blue[\* *Just-in-time compilation* (JIT) is one of the tricks Julia does to make things run faster.] It translates your code to processor language the first time you run it and uses the translated version every time you call it again. Here, we run the functions once so that compiling doesn't add to our measure of running time in the next slide.]
 
 ---
 
@@ -929,77 +945,70 @@ x = rand(10^6);
 Then, let's run and time it
 
 ```{julia}
-@time show_vec_speed(x)
-@time show_fuse_speed(x)
+@btime show_vec_speed(x)
+@btime show_fuse_speed(x)
 ```
 
-Full vectorization using `@.` is 10x faster with 1/6 of the memory allocation
+Full vectorization using `@.` is about 5--10x faster with 1/6 of the memory allocation
 
 ---
 
 ## Dot syntax: broadcasting/vectorization
 
-Not pre-allocated:
+Let's see another example
 
 ```{julia, results = 'hide'}
-h(y,z) = y^2 + sin(z);   # function to evaluate
-y = 1:2:1e6+1;           # input y
-z = rand(length(y));     # input z
+h(y,z) = y^2 + sin(z); # function to evaluate
+y = 1:2:1e6+1;         # input y
+z = rand(length(y));   # input z
 ```
 
 ---
 
 ## Dot syntax: broadcasting/vectorization
 
-Here we are vectorizing the *function call*
+Here we are vectorizing the *function call* only
 
 ```{julia, results = 'hide'}
-# precompile h so first timer isn't picking up on compilation time
-h(1,2);
+# precompile h 
+h_out_1 = h.(y,z);
 ```
 
 ```{julia}
-@time h_out_1 = h.(y,z)    # evaluate h.(y,z) and time
+@btime h_out_1 = h.(y,z) # evaluate h.(y,z) and measure time
 ```
 
 ---
 ## Dot syntax: broadcasting/vectorization
 
-Here we are vectorizing the *function call* **and** *assignment*
+Here we are vectorizing the *function call* **and** *assignment*. With pre-allocated memory and vectorized assignment, we get an additional performance gain
 
 ```{julia, results = 'hide'}
-h_out_2 = similar(h_out_1) # This pre-alocates memory for an object of the same type and size
+h_out_2 = similar(h_out_1) # This pre-allocates memory for an object of the same type and size
 ```
 
 ```{julia}
-@time h_out_2 .= h.(y,z)
+@btime h_out_2 .= h.(y,z)
 ```
 
 ---
 ## Dot syntax: broadcasting/vectorization
 
-Here we are vectorizing the *function call* **and** *assignment* **and** even the *operations* inside the function
+Here we are again vectorizing the *function call* **and** *assignment*. But the `@.` syntax helps us write clear code because we only need to use it once instead of adding `.`'s everywhere
+
 
 ```{julia, results = 'hide'}
 h_out_3 = similar(h_out_1)
 ```
 ```{julia}
-@time @. h_out_3 = h(y,z)
+@btime @. h_out_3 = h(y,z)
 ```
 
 ---
 
-## Dot syntax: broadcasting/vectorization
+class: inverse, center, middle
 
-The `@.` macro saves us from typing a bunch of `.`
-
-```{julia, results = 'hide'}
-h_vec(y,z) = y.^2 + sin.(z); h_vec(1,2); h_out_4 = similar(h_out_1)
-```
-```{julia}
-@time h_out_4 .= h.(y,z)
-```
-
+# 4. Scope
 
 ---
 
@@ -1097,6 +1106,67 @@ Since the outside `zz` has global scope, the locally scoped variables in the loo
 
 ## Scope
 
+But hold on. If you copy and paste the previous code and run it in REPL, it will actually return 10, not 0. $^{*}$ Was it all a lie?!
+
+<div align="center">
+  <img src="figures/scope_vscode.png">
+</div>
+
+
+.footnote[*Thanks, Chad, for pointing that out.]
+
+---
+
+## Scope
+
+Actually, there are two types of local scope: **soft** and **hard**
+
+Here is how Julia `1.7` applies them
+
+<div align="center">
+  <img src="figures/scope_1.png">
+</div>
+
+---
+
+## Scope
+
+When you assign `x = 10`
+
+- If `x` is already defined in the local scope: the existing local `x` is assigned
+--
+
+- Otherwise
+   - In **hard local scope**: a new local `x` is created and assigned
+   - In **soft local scope**, it depends on whether a global `x` is defined...
+--
+
+      - If there is no global `x`: a new local `x` is created and assigned
+      - If there is a global `x`: the assignment is *ambiguous*...
+--
+         - In *non-interactive* context (running a file): a new local `x` is created and assigned
+         - In *interactive* context (REPL, notebooks): the global `x` is assigned
+---
+
+## Scope
+
+So here is why we get different results:
+
+- The `for` loop written in global (e.g.: outside of a function) has **soft local scope**
+
+- When I run the code in a file to generate these slides, that `for` loop is in a *non-interactive* context $\rightarrow$ a new local `zz` is created and assigned  
+
+- When I run it in VS Code/REPL, it's in an *interactive* context $\rightarrow$ the global `zz` is assigned  
+
+--
+
+(This is a bit confusing, I know...)
+
+---
+
+
+## Scope
+
 Generally, you want to avoid global scope because it can cause conflicts, slowness, etc. But you can use `global` to force it if you want something to have global scope
 
 ```{julia}
@@ -1144,6 +1214,11 @@ end
 wrapper()
 ```
 
+---
+
+class: inverse, center, middle
+
+# 5. Generic programming
 
 ---
 
@@ -1227,8 +1302,8 @@ We can see this when calling the macro `@code_warntype` where it reports `t1` at
 Julia now can't assume `s`'s type and produce pure integer or floating point code. This leads to **performance degradation**
 
 <div align="center">
-  <img src="figures/t1_codewarn.png" height=150>
-  <img src="figures/t2_codewarn.png" height=150>
+  <img src="figures/t1_codewarn.png" height=200>
+  <img src="figures/t2_codewarn.png" height=200>
 </div>
 
 ---
@@ -1254,7 +1329,6 @@ You can check where types are in the hierarchy (with the subtype operator `<:`)
 ```{julia}
 @show Float64 <: Real
 @show Array <: Real
-@show Number <: Any
 ```
 
 ---
@@ -1312,13 +1386,13 @@ Custom types are a *handy and elegant way of organizing your program*
 
 - Then, instead of having a function call
 
-```
+```julia
 RunMyModel(param1, param2, param3, param4, param5);
 ```
 
 - You call
 
-```
+```julia
 RunMyModel(modelParameters);
 ```
 
@@ -1425,8 +1499,8 @@ sametypes(y)
 ```
 
 <div align="center">
-  <img src="figures/generic_codewarn_float.png" height=125>
-  <img src="figures/generic_codewarn_int.png" height=125>
+  <img src="figures/generic_codewarn_float.png" height=200>
+  <img src="figures/generic_codewarn_int.png" height=200>
 </div>
 
 --
@@ -1435,31 +1509,37 @@ There's a lot of other functions out there that help with writing flexible, type
 
 ---
 
-## Multiple dispatch
+class: inverse, center, middle
 
-#### Why type stability really matters: multiple dispatch
-
-Neat thing about Julia: the same function name can perform different operations depending on the underlying type of the inputs
-
-A function specifies different **methods**, each of which operates on a specific set of types
+# 6. Multiple dispatch
 
 ---
 
 ## Multiple dispatch
 
-When you write a function that's type stable, you are actually writing many different methods, each of which are optimized for certain types
+#### Why type stability really matters: multiple dispatch
+
+This means that the same function name can perform different operations depending on the type of the inputs it receives
+
+In practice, a function specifies different **methods**, each of which operates on a specific set of types
+
+---
+
+## Multiple dispatch
+
+When you write a function that is type stable, you are actually writing many different methods, each of which are optimized for certain types
 
 --
 
 If your function isn't type stable, the optimized method may not be used
 
-This is why Julia can achieve C speed: it compiles to C (or faster) code
+This is why Julia can achieve C speed: it compiles optmized code for each type and doesn't need to waste time "guessing" a variable's type
 
 ---
 
 ## Multiple dispatch
 
-`/` has 103 different methods depending on the input types, these are 103 specialized sets of codes
+`/` has 118 different methods for division depending on the input types! These are 103 specialized sets of codes
 
 ```{julia}
 methods(/)
