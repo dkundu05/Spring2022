@@ -1548,11 +1548,62 @@ methods(/)
 
 ---
 
-## More on coding practices and efficiency
+## Some concluding words on programming
 
-See [JuliaPraxis](https://github.com/JuliaPraxis) for best practices for naming, spacing, comments, etc
+There is really only one way to effectively get better at programming: **PRACTICE**
 
-See more [Performance tips](https://docs.julialang.org/en/v1/manual/performance-tips) from Julia Documentation
+--
+
+Yes, reading *can help*, especially by making you aware of tools and resources. But it's no substitute for actually solving problems with the computer
+
+--
+
+PS1 will be posted after we finish the next lecture. This is a good time to get familiarized with Julia and sharpen your skills
+
+---
+
+## Some concluding words on programming
+
+#### How to get started with your practice? ####
+
+My suggestion of an intuitive way: **practice writing programs to solve problems you would know how to solve by hand**
+
+--
+
+- The computer follows a strict logic that very often is different from yours
+- Learning how to tell the computer to follow instructions and get to a destination you already know is a great way of learning
+
+--
+
+My personal favorite: [Project Euler](https://projecteuler.net) 
+
+---
+
+## Some concluding words on programming
+
+> *Project Euler is a series of challenging mathematical/computer programming problems that will require more than just mathematical insights to solve. Although mathematics will help you arrive at elegant and efficient methods, the use of a computer and programming skills will be required to solve most problems.*
+
+--
+
+Example of problems
+1. If we list all the natural numbers below 10 that are multiples of 3 or 5, we get 3, 5, 6 and 9. The sum of these multiples is 23. *Find the sum of all the multiples of 3 or 5 below 1000.*
+--
+
+2. The prime factors of 13195 are 5, 7, 13 and 29. *What is the largest prime factor of the number 600851475143 ?*
+
+--
+
+You can type in your answer and it will tell you if it's correct
+
+---
+
+## Some concluding words on programming
+
+More on coding practices and efficiency:
+
+- See [JuliaPraxis](https://github.com/JuliaPraxis) for best practices for naming, spacing, comments, etc
+
+- See more [Performance tips](https://docs.julialang.org/en/v1/manual/performance-tips) from Julia Documentation
 
 
 ---
