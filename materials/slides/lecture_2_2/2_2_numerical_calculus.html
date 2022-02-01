@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>AGEC 652 - Lecture 2.2</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Diego S. Cardoso" />
+    <script src="2_2_numerical_calculus_files/header-attrs-2.11/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# AGEC 652 - Lecture 2.2
+## Numerical Calculus
+### Diego S. Cardoso
+### Spring 2022
+
+---
+
+exclude: true
+
+```r
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  xaringanthemer, JuliaCall
+)
+
+#options(htmltools.dir.version = FALSE)
+
+knitr::opts_hooks$set(fig.callout = function(options) {
+  if (options$fig.callout) {
+    options$echo &lt;- FALSE
+  }
+
+  knitr::opts_chunk$set(echo = TRUE, fig.align="center")
+  options
+})
+```
+
+
+
+
+```julia
+using Pkg
+Pkg.activate(".")
+Pkg.instantiate()
+Pkg.add("ForwardDiff"); Pkg.add("Distributions"); Pkg.add("BenchmarkTools")
+```
+
+---
+
+## .blue[Course roadmap]
+
+1. .gray[Intro to Scientific Computing]
+2. **Numerical operations and representations** 
+   1. .gold[Numerical arithmetic] 
+   2. **Numerical differentiation and integration** `\(\leftarrow\)` .blue[You are here]
+   3. .gold[Function approximation]
+3. Systems of equations
+4. Optimization
+5. Structural estimation
+
+---
+
+class: inverse, center, middle
+
+.footnote[\*These slides are based on Miranda &amp; Fackler (2002), Judd (1998), Nocedal &amp; Wright (2006), and course materials by Ivan Rudik.]
+
+
+---
+
+class: inverse, center, middle
+
+# Big O notation
+
+### A useful way to represent limiting behavior
+
+---
+
+## Big O notation
+
+How do we quantify **speed** and **accuracy** of computational algorithms?
+
+--
+
+The usual way is to use **Big O (or order) notation**
+
+--
+
+- General mathematical definition: describes the *limiting behavior of a function* when the argument tends towards a particular value or infinity
+  - You've seen this before in the expression of Taylor series' errors
+
+--
+
+- Programming context: describes the limiting behavior of algorithms in terms of run time/memory/accuracy as input size grows
+
+---
+
+## Big O notation
+
+Written as: `\(O(f(x))\)`
+
+Formally, for two real-valued functions `\(f(x)\)` and `\(g(x)\)` we say
+
+`$$g(x) = O(f(x))$$`
+
+if there `\(\exists\)` a positive `\(C\)` such that 
+
+`$$|g(x)| \leq C |f(x)|, \text{as}\; x \rightarrow a$$`
+
+--
+
+So `\(g\)` is bounded by `\(f\)` up to a scalar. Another way of saying it (if `\(g\)` is non-zero): `\(\lim_{x \rightarrow a} \frac{|g(x)|}{|f(x)|} &lt; \infty\)`
+
+Intuitively, `\(g\)` never gets "too far away" from `\(f\)` as `\(x \rightarrow a\)`
+
+---
+
+## Big O notation
+
+Here is how to think about it:
+
+`\(\mathbf{O(x)}\)`: **linear**
+- Time to solve increases linearly in input x
+- Accuracy changes linearly in input x
+
+--
+
+.blue[Examples?]
+
+--
+
+- Time to find a particular value in an unsorted array
+  - For each element, check whether it is the value we want
+
+---
+
+## Big O notation
+
+`\(\mathbf{O(c^x)}:\)` **exponential**
+- Time to solve increases exponentially in input x
+- Accuracy changes exponentially in input x
+
+--
+
+.blue[Examples?]
+
+--
+
+- Time to solve a standard dynamic program, e.g. traveling salesman
+  - For each city `\(i=1,...,n\)`, solve a Bellman equation as a function of all other cities
+
+---
+
+## Big O notation
+
+`\(\mathbf{O(n!)}\)`: factorial
+- Time to solve increases factorially in input x
+- Accuracy changes factorially in input x
+
+--
+
+.blue[Examples?]
+
+--
+
+- Solving traveling salesman by brute force
+  - Obtain travel time for all possible combinations of intermediate cities
+
+---
+
+## Big O notation: accuracy example
+
+This is how you have probably seen Big O used before:
+
+--
+
+Taylor series for `\(sin(x)\)` around zero:
+
+`\(sin(x) \approx x - x^3/3! + x^5/5! + O(x^7)\)`
+
+What does `\(O(x^7)\)` mean here?
+
+---
+
+## Big O notation: accuracy example
+
+`\(sin(x) \approx x - x^3/3! + x^5/5! + O(x^7)\)`
+
+--
+
+As we move away from `\(0\)` to some `\(x\)`, the upper bound of the growth rate in the error of our approximation to `\(sin(x)\)` is `\(x^7\)`
+
+If we are approximating about zero so `\(x\)` is small: `\(x^n\)` is decreasing in `\(n\)`
+
+--
+
+For small `\(x\)`, higher order polynomials mean the error will grow slower and we have a better local approximation
+
+---
+
+## Taylor expansions
+
+
+```julia
+# fifth and third order Taylor approximations
+sin_error_5(x) = sin(x) - (x - x^3/6 + x^5/120)
+sin_error_3(x) = sin(x) - (x - x^3/6)
+```
+
+--
+
+
+```julia
+println("Error of fifth-order approximation at x = .001 is: $(sin_error_5(.001))
+Error of third-order approximation at x = .001 is: $(sin_error_3(.001))
+Error of fifth-order approximation at x = .01 is: $(sin_error_5(.01))
+Error of third-order approximation at x = .01 is: $(sin_error_3(.01))
+Error of fifth-order approximation at x = .1 is: $(sin_error_5(.1))
+Error of third-order approximation at x = .1 is: $(sin_error_3(.1))")
+```
+
+```
+## Error of fifth-order approximation at x = .001 is: 0.0
+## Error of third-order approximation at x = .001 is: 8.239936510889834e-18
+## Error of fifth-order approximation at x = .01 is: -1.734723475976807e-18
+## Error of third-order approximation at x = .01 is: 8.333316675601665e-13
+## Error of fifth-order approximation at x = .1 is: -1.983851971587569e-11
+## Error of third-order approximation at x = .1 is: 8.331349481138783e-8
+```
+
+---
+
+## Big O notation: speed examples
+
+Here are a few examples for fundamental computational methods
+
+---
+
+## Big O notation: speed examples
+
+`\(\mathbf{O(1)}\)`: algorithm executes in **constant time**
+
+The size of the input does not affect execution speed
+
+--
+
+Example: 
+
+--
+
+- Accessing a specific location in an array: `x[10]`
+
+---
+
+## Big O notation: speed examples
+
+`\(\mathbf{O(x)}\)`: algorithm executes in **linear time**
+
+Execution speed grows linearly in input size
+
+Example:
+
+--
+
+- Inserting an element into an arbitrary location in a 1 dimensional array
+  - Bigger array `\(\rightarrow\)` need to shift around more elements in memory to accommodate the new element
+
+---
+
+## Big O notation: speed examples
+
+`\(\mathbf{O(x^2):}\)` algorithm executes in **quadratic time**
+  - More generally called **polynomial time** for `\(O(x^n)\)`
+
+Execution speed grows quadratically in input size
+
+Example: 
+
+--
+
+- *Bubble sort*: step through a list, compare adjacent elements, swap if in the wrong order
+
+---
+
+class: inverse, center, middle
+
+# Numerical differentiation
+
+---
+
+## Differentiation
+
+Derivatives are obviously important in economics for finding optimal allocations, etc
+
+The formal definition of a derivative is:
+
+--
+
+`$$\frac{d f(x)}{dx} = \lim_{h\rightarrow 0} \frac{f(x+h)-f(x)}{h}$$`
+
+--
+
+But we can let `\(t = 1/h\)` and reframe this as an infinite limit
+
+--
+
+`$$\frac{d f(x)}{dx} = \lim_{t\rightarrow \infty} \frac{f(x+1/t)-f(x)}{1/t}$$`
+
+which we know a computer can't handle because of finite space to store `\(t\)`
+
+---
+
+## Computer differentiation
+
+Q: How do we perform derivatives on computers if we can't take the limit?
+
+--
+
+A: **Finite difference methods**
+
+--
+
+Idea: Approximate the limit by letting `\(h\)` be a small number
+
+--
+
+What does a finite difference approximation look like?
+
+---
+
+## Forward difference
+
+The forward difference looks exactly like the formal definition without the limit: `$$\frac{d f(x)}{dx} \approx \frac{f(x+h)-f(x)}{h}$$`
+
+--
+
+It works the same for partial derivatives: 
+
+`$$\frac{\partial g(x,y)}{\partial x} \approx \frac{g(x+h,y)-g(x,y)}{h}$$`
+---
+
+## .blue[Forward difference]
+
+Let's see how it works in practice by calculating derivatives of `\(x^2\)` at `\(x=2\)`
+
+1. Write a function `deriv_x_squared(h,x)` that returns the forward difference approximation to the derivative of `\(x^2\)` around with step size `\(h\)`
+2. Evaluate the the function for `x=2` and 3 values of `h`
+  1. `h = 1e-1`
+  2. `h = 1e-12`
+  3. `h = 1e-30`
+
+
+
+---
+
+## Forward difference
+
+
+```julia
+deriv_x_squared(h,x) = ((x+h)^2 - x^2)/h # derivative function
+```
+
+--
+
+
+```julia
+println("
+        The derivative with h=1e-1  is: $(deriv_x_squared(1e-1 ,2.))
+        The derivative with h=1e-12 is: $(deriv_x_squared(1e-12,2.))
+        The derivative with h=1e-30 is: $(deriv_x_squared(1e-30,2.))")
+```
+
+```
+## 
+##         The derivative with h=1e-1  is: 4.100000000000001
+##         The derivative with h=1e-12 is: 4.000355602329364
+##         The derivative with h=1e-30 is: 0.0
+```
+
+---
+
+## Error, it's there
+
+None of the values we chose for `\(h\)` were perfect, but clearly some were better than others
+
+--
+
+Why?
+
+--
+
+We face two opposing forces:
+
+- We want `\(h\)` to be as small as possible so that we can approximate the limit as well as we possibly can, *BUT*
+
+--
+
+- If `\(h\)` is small then `\(f(x+h)\)` is close to `\(f(x)\)`, we can run into rounding issues like we saw for `\(h=10^{-30}\)`
+
+---
+
+## Error, it's there
+
+We can select `\(h\)` in an optimal fashion: `\(h = \max\{|x|,1\}\sqrt{\epsilon}\)`
+
+--
+
+There's proofs for why this is the case but generally testing out different `\(h\)`'s works fine
+
+---
+
+## How much error is in a finite difference?
+
+Can we measure the error growth rate in `\(h\)` (i.e. Big O notation)?
+
+--
+
+Perform a first-order Taylor expansion of `\(f(x)\)` around `\(x\)`:
+
+--
+
+`$$f(x+h) = f(x) + f'(x)h + O(h^2)$$`
+
+Recall that `\(O(h^2)\)` means the error in our approximation grows quadratically in `\(h\)`, though we only did a linear approximation
+
+--
+
+How can we use this to understand the error in our finite difference approximation?
+
+---
+
+## How much error is in a finite difference?
+
+Rearrange to obtain: `\(f'(x) = \frac{f(x+h) - f(x)}{h} + O(h^2)/h\)`
+
+--
+
+`\(\Rightarrow f'(x) = \frac{f(x+h) - f(x)}{h} + O(h)\)` because `\(O(h^2)/h = O(h)\)`
+
+--
+
+**Forward differences have linearly growing errors**
+
+--
+
+If we halve `\(h\)`, we halve the error in our approximation (ignoring rounding/truncation issues)
+
+---
+
+## Improvements on the forward difference
+
+How can we improve the accuracy of the forward difference?
+
+--
+
+First, *why* do we have error?
+
+--
+
+- Because we are approximating the slope of a tangent curve at `\(x\)` by a secant curve passing through `\((x,x+h)\)`
+  - The secant curve has the average slope of `\(f(x)\)` on `\([x,x+h]\)`
+
+--
+
+- We want the derivative at `\(x\)`, which is on the edge of `\([x,x+h]\)`
+
+*How about we **center* `\(x\)`?
+
+---
+
+## Central differences
+
+We can approximate `\(f'(x)\)` in a slightly different way: `$$f'(x) \approx \frac{f(x+h)-f(x-h)}{2h}$$`
+
+--
+
+- This leaves `\(x\)` in the middle of the interval over which we are averaging the slope of `\(f(x)\)`
+
+--
+
+*Is this an improvement on forward differences?*
+
+---
+
+## How much error is in a central finite difference?
+
+Lets do two second-order Taylor expansions:
+- `\(f(x+h) = f(x) + f'(x)h + f''(x)h^2/2! + O(h^3)\)`
+- `\(f(x-h) = f(x) + f'(x)(-h) + f''(x) (-h)^2/2! + O(h^3)\)`
+
+--
+
+Subtract the two expressions (note that `\(O(h^3) - O(h^3) = O(h^3)\)`) and then divide by `\(2h\)` to get
+
+--
+
+`$$f'(x) = \frac{f(x+h)-f(x-h)}{2h} + O(h^2)$$`
+
+---
+
+## How much error is in a central finite difference?
+
+`$$f'(x) = \frac{f(x+h)-f(x-h)}{2h} + O(h^2)$$`
+--
+
+Error is quadratic in `\(h\)`: if we halve `\(h\)` we reduce error by 75%
+
+---
+
+## Why use anything but central differences?
+
+Suppose we're computing a Jacobian of a multidimensional function. Why would we ever use forward differences instead of central differences?
+
+--
+
+- For each central difference, we need to compute `\(g(x_1-h,x_2,...)\)` and `\(g(x_1+h,x_2,...)\)` for each `\(x_i\)`
+
+--
+
+- But for a forward difference we only need to compute `\(g(x_1,x_2,...)\)` once and then `\(g(x_1+h,x_2,...)\)` for each `\(x_i\)`
+
+--
+
+Forward differences saves on the *number of operations at the expense of accuracy*
+
+- For high dimensional functions it may be worth the trade-off
+
+---
+
+## Higher order finite differences
+
+We can use these techniques to approximate higher order derivatives
+
+--
+
+For example, take two third order Taylor expansions
+
+--
+
+- `\(f(x+h) = f(x) + f'(x)h + f''(x)h^2/2! + f'''(x)h^3/3! + O(h^4)\)`
+- `\(f(x-h) = f(x) + f'(x)(-h) + f''(x)(-h)^2/2! + f'''(x)(-h)^3/3! + O(h^4)\)`
+
+--
+
+Add the two expressions and then divide by `\(h^2\)` to get
+
+--
+
+`$$f''(x) = \frac{f(x+h) - 2f(x) + f(x-h)}{h^2} + O(h^2)$$`
+
+--
+
+Second derivatives are important for calculating Hessians and checking maxima or minima
+
+---
+
+## Differentiation without error?
+
+Finite differences put us in between two opposing forces on the size of `\(h\)`
+
+--
+
+Can we improve upon finite differences?
+
+--
+
+- Analytic derivatives
+  - One way is to code up the actual derivative
+
+--
+
+
+```julia
+deriv_x_squared(x) = 2x
+```
+
+```
+## The deriviative is: 4.0
+```
+
+--
+
+Exact solution!
+
+---
+
+## Analytic derivatives
+
+Coding up analytic derivatives by hand for complex problems is not always great because:
+
+--
+
+- It can take A LOT of programmer time, more than it is worth
+
+--
+
+- Humans are susceptible to error in coding or calculating the derivative mathematically
+
+--
+
+There is another option...
+
+---
+
+## Autodiff: let the computer do it
+
+Think about this: your code is *always* made up of simple arithmetic operations
+- add, subtract, divide, multiply
+- trig functions
+- exponentials/logs
+- etc
+
+--
+
+The closed form derivatives of these operations is not hard: it turns out your computer can do it and yield exact solutions
+
+That's called **automatic differentiation**, or **autodiff** for short
+
+---
+
+## Autodiff: let the computer do it
+
+How? 
+
+--
+
+There are methods that basically apply a giant *chain rule* to your whole program and break down the derivative into the (easy) component parts that another package knows how to handle
+
+--
+
+The details of decomposing calculations with computer instructions get pretty complicated pretty fast. We're not going to code it by hand. Instead, we're going to use a package for that: `ForwardDiff`
+- The name follows from *forward mode*, which is one way of doing autodiff
+- Check out Nocedal &amp; Wright Ch.8 for more details
+
+---
+
+## Autodiff: let the computer do it
+
+
+```julia
+# Your function needs to be written in a particular way because the autodiff package is dumb
+# *(x,y) is the Julia function way to do x*y, 
+# autodiff needs to be in terms of julia functions to work correctly ¯\_(ツ)_/¯
+ff(x) = *(x[1],x[1]) # x^2
+x = [2.0]; # location to evaluate: ff(x) = 2^2
+```
+
+--
+
+
+```julia
+using ForwardDiff # This is the package that has autodiff
+g(f,x) = ForwardDiff.gradient(f,x); # Define g = ∇f for a generic function
+```
+
+```
+## g (generic function with 1 method)
+```
+
+```julia
+println("ff'(x) at $(x[1]) is: $(g(ff,x)[1])") # display gradient value
+```
+
+```
+## ff'(x) at 2.0 is: 4.0
+```
+
+**Exact solution!**
+
+---
+
+## Autodiff: let the computer do it
+
+Once you get the hang of coding up function for autodiff it's not that hard
+
+
+```julia
+fff(x) = sin(*(x[1],x[1])) # write it in the autodiff way
+x = [2.0]  # location to evaluate: ff(x) = 2^2
+g(f,x) = ForwardDiff.gradient(f,x)  # g = ∇f
+```
+
+--
+
+
+```julia
+println("fff'(x) at $(x[1]) is: $(g(fff,x)[1])") # display gradient value
+```
+
+```
+## fff'(x) at 2.0 is: -2.6145744834544478
+```
+
+
+---
+
+## .blue[Autodiff: let the computer do it]
+
+Try it out! Code up the derivative of `\(log(10 + x)\)` at `x=5.5` using automatic differentiation
+
+1. Make sure you have the `ForwardDiff` package
+  1. If not type `using Pkg` then `Pkg.add("ForwardDiff")`
+2. Define your function `my_fun`
+  1. Pay attention to how you write the sum!
+3. Define `x` as a 1-element array containing `5.5`
+4. Define the gradient operator `g` using `ForwardDiff.gradient(f,x)`
+5. Use `g` to evaluate the derivative
+6. Derive the analytic solution and compare to your numeric one
+
+---
+
+## Autodiff: let the computer do it
+
+
+```julia
+my_fun(x) = log(+(x[1], 10.0));
+x = [5.5];
+g(f,x) = ForwardDiff.gradient(f,x);
+g(my_fun,x)[1]
+```
+
+```
+## 0.06451612903225806
+```
+
+```julia
+1/(10.0 + x[1])
+```
+
+```
+## 0.06451612903225806
+```
+
+
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Calculus operations --&gt;
+
+&lt;!-- Integration, trickier than differentiation --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- We integrate to do a lot of stuff in economics --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- - Expectations --&gt;
+&lt;!-- - Add up a continuous measure of things --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- `\(\int_D f(x) dx\)`, `\(f:\mathcal{R}^n-\mathcal{R}\)`, `\(D\subset\mathcal{R}^n\)` --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## How to think about integrals --&gt;
+
+&lt;!-- Integrals are effectively infinite sums --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- 1 dimensional example: --&gt;
+
+&lt;!-- `\(\lim_{dx_i\rightarrow0}\sum_{i=0}^{(a-b)/dx_i} f(x_i) dx_i\)` --&gt;
+
+&lt;!-- where `\(dx_i\)` is some subset of `\([a,b]\)` and `\(x_i\)` is some evaluation point (e.g. midpoint of `\(dx_i\)`) --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Infinite limits strike again --&gt;
+
+&lt;!-- Just like derivatives, we face an infinite limit as `\((a-b)/dx_i \rightarrow \infty\)` --&gt;
+
+&lt;!-- We avoid this issue in the same way as derivatives, we replace the infinite sum with something we can handle --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Monte Carlo integration --&gt;
+
+&lt;!-- Probably the most commonly used form in empirical econ --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Approximate an integral by relying on LLN   --&gt;
+&lt;!-- and "randomly" sampling the integration domain --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Can be effective for very high dimensional integrals --&gt;
+
+&lt;!-- Very simple and intuitive --&gt;
+
+&lt;!-- But, produces a random approximation --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Monte Carlo integration --&gt;
+
+&lt;!-- Integrate `\(\xi = \int_0^1 f(x) dx\)` by drawing `\(N\)` uniform samples, `\(x_1,...,x_N\)` over interval `\([0,1]\)` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- `\(\xi\)` is equivalent to `\(E[f(x)]\)` with respect to a uniform distribution, --&gt;
+&lt;!-- so estimating the integral is the same as estimating the expected value of `\(f(x)\)` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- In general we have that `\(\hat{\xi} = V\frac{1}{N}\sum_{i=1}^N f(x_i)\)` --&gt;
+
+&lt;!-- where `\(V\)` is the volume over which we are integrating --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- LLN gives us that the `\(plim_{N\rightarrow\infty} \hat{\xi} = \xi\)` --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Monte Carlo integration --&gt;
+
+&lt;!-- The variance of `\(\hat{\xi}\)` is `$$\sigma^2_{\hat{\xi}} = var(\frac{V}{N}\sum_{i=1}^N f(x_i)) = \frac{V^2}{N^2} \sum_{i=1}^N var(f(X)) = \frac{V^2}{N}\sigma^2_{f(X)}$$` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- So average error is `\(\frac{V}{\sqrt{N}}\sigma_{f(X)}\)`, this gives us its rate of convergence: `\(O(\sqrt{N})\)` --&gt;
+
+&lt;!-- Note: --&gt;
+
+&lt;!-- 1. The rate of convergence is independent of the dimension of x --&gt;
+&lt;!-- 2. Quasi-Monte Carlo methods can get you `\(O(1/N)\)` --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Monte Carlo integration --&gt;
+
+&lt;!-- Suppose we want to integrate `\(x^2\)` from 0 to 10, we know this is `\(10^3/3 = 333.333\)` --&gt;
+
+&lt;!-- ```{julia, results = 'hide'} --&gt;
+&lt;!-- # Package for drawing random numbers --&gt;
+&lt;!-- using Distributions --&gt;
+
+&lt;!-- # Define a function to do the integration for an arbitrary function --&gt;
+&lt;!-- function integrate_function(f, lower, upper, num_draws) --&gt;
+
+&lt;!--   # Draw from a uniform distribution --&gt;
+&lt;!--   xs = rand(Uniform(lower, upper), num_draws) --&gt;
+
+&lt;!--   # Expectation = mean(x)*volume --&gt;
+&lt;!--   expectation = mean(f(xs))*(upper - lower) --&gt;
+
+&lt;!-- end --&gt;
+&lt;!-- ``` --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Monte Carlo integration --&gt;
+
+&lt;!-- Suppose we want to integrate `\(x^2\)` from 0 to 10, we know this is `\(10^3/3 = 333.333\)` --&gt;
+
+&lt;!-- ```{julia} --&gt;
+&lt;!-- # Integrate --&gt;
+&lt;!-- f(x) = x.^2; --&gt;
+&lt;!-- integrate_function(f, 0, 10, 1000) --&gt;
+&lt;!-- ``` --&gt;
+
+&lt;!-- Pretty close! --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Quadrature rules --&gt;
+
+&lt;!-- We can also approximate integrals using a technique called .hi-blue[quadrature] --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- With quadrature we effectively take weighted sums to approximate integrals --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- We will focus on two classes of quadrature for now: --&gt;
+
+&lt;!-- 1. Newton-Cotes (the kind you've seen before) --&gt;
+&lt;!-- 2. Gaussian (probably new) --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Newton-Cotes quadrature rules --&gt;
+
+&lt;!-- Suppose we want to integrate a one dimensional function `\(f(x)\)` over `\([a,b]\)` --&gt;
+
+&lt;!-- How would you do it? --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- One answer is to replace the function with   --&gt;
+&lt;!-- something easy to integrate: .hi-blue[a piecewise polynomial] --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Key things to define up front: --&gt;
+&lt;!-- - `\(x_i = a + (i-1)/h\)` for `\(i=1,2,...,n\)` where `\(h = \frac{b-a}{n-1}\)` --&gt;
+
+&lt;!-- `\(x_i\)`s are the .hi-blue[quadrature nodes] of the approximation scheme and divide the interval into `\(n-1\)` equally spaced subintervals of length `\(h\)` --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Midpoint rule --&gt;
+
+&lt;!-- Most basic Newton-Cotes method: --&gt;
+&lt;!-- 1. Split `\([a,b]\)` into intervals --&gt;
+&lt;!-- 2. Approximate the function in each subinterval by a constant equal to the function at the midpoint of the subinterval --&gt;
+
+
+&lt;!-- -- --&gt;
+
+&lt;!-- `\(\int_{x_i}^{x_{i+1}} f(x) dx \approx hf(\frac{1}{2}(x_{i+1}+x_i))\)` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Approximates `\(f\)` by a step function --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Trapezoid rule --&gt;
+
+&lt;!-- Increase complexity by 1 degree: --&gt;
+&lt;!-- 1. Split `\([a,b]\)` into intervals --&gt;
+&lt;!-- 2. Approximate the function in each subinterval by a --&gt;
+&lt;!-- linear interpolation passing through `\((x_i,f(x_i))\)` and `\((x_{i+1},f(x_{i+1}))\)` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- `\(\int_{x_i}^{x_{i+1}} f(x) dx \approx \frac{h}{2}[f(x_i) + f(x_{i+1})]\)` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- We can aggregate this up to: `\(\int_{a}^{b} f(x) dx \approx \sum_{i=1}^n w_i f(x_i)\)`   --&gt;
+&lt;!-- where `\(w_1=w_n = h/2\)` and `\(w_i = h\)` otherwise --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## How accurate is this rule? --&gt;
+
+&lt;!-- Trapezoid rule is `\(O(h^2)\)` / first-order exact: it can integrate any linear function exactly --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Simpsons rule --&gt;
+
+&lt;!-- Increase complexity by 1 degree: --&gt;
+&lt;!-- 2. Let `\(n\)` be odd, then approximate the function across a .hi-blue[pair] of subintervals --&gt;
+&lt;!-- by a quadratic interpolation passing through `\((x_{2i-1},f(x_{2i-i}))\)`, `\((x_{2i},f(x_{2i}))\)`, and `\((x_{2i+1},f(x_{2i+1}))\)` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- `\(\int_{x_i}^{x_{i+1}} f(x) dx \approx \frac{h}{3}[f(x_{2i-1}) + 4f(x_{2i}) + f(x_{2i+1})]\)` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- We can aggregate this up to: `\(\int_{a}^{b} f(x) dx \approx \sum_{i=1}^n w_i f(x_i)\)`   --&gt;
+&lt;!-- where `\(w_1=w_n = h/3\)`, otherwise and `\(w_i = 4h/3\)` if `\(i\)` is even and `\(w_i = 2h/3\)` if `\(i\)` is odd --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## How accurate is this rule? --&gt;
+
+&lt;!-- Simpson's rule is `\(O(h^4)\)` / third-order exact: it can integrate any cubic function exactly --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- That's weird! Why do we gain 2 orders of accuracy when increasing one order of approximation complexity? --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- 1. The approximating piecewise quadratic is exact at the end points and midpoint of the conjoined two subintervals --&gt;
+&lt;!-- -- --&gt;
+
+&lt;!-- 2. Clearly the difference between a cubic `\(f(x)\)` and the quadratic approximation in `\([x_{2i-1},x_{2i+1}]\)` is another cubic function --&gt;
+&lt;!-- -- --&gt;
+
+&lt;!-- 3. This cubic function is .hi-blue[odd] with respect to the midpoint `\(\rightarrow\)` integrating over the first subinterval cancels integrating over the second subinterval --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Gaussian quadrature rules --&gt;
+
+&lt;!-- How did we pick the `\(x_i\)` quadrature nodes for Newton-Cotes rules? --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Evenly spaced, but no particular reason for doing so... --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Gaussian quadrature selects these nodes more efficiently   --&gt;
+&lt;!-- and relies on .hi-blue[weight functions] `\(w(x)\)` --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Gaussian quadrature rules --&gt;
+
+&lt;!-- Gaussian rules try to .hi-blue[exactly integrate] some finite dimensional collection of functions (i.e. polynomials up to some degree) --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- For a given order of approximation `\(n\)`, the weights `\(w_1,...,w_n\)` and nodes `\(x_1,...,x_n\)` --&gt;
+&lt;!-- are chosen to satisfy `\(2n\)` .hi-blue[moment matching conditions]: --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- `\(\int_I x^kw(x)dx = \sum_{i=1}^n w_i x^k_i\)`, for `\(k=0,...,2n-1\)` --&gt;
+
+&lt;!-- where `\(I\)` is the interval over which we are integrating   --&gt;
+&lt;!-- and `\(w(x)\)` is a given weight function --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Gaussian quadrature improves accuracy --&gt;
+
+&lt;!-- The moment matching conditions pin down `\(w_i\)`s and `\(x_i\)`s so we can --&gt;
+&lt;!-- approximate an integral by a weighted sum of the function at the prescribed nodes --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- `\(\int_i f(x) w(x)dx \approx \sum_{i=1}^n w_i f(x_i)\)` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Gaussian rules are `\(2n-1\)` order exact,   --&gt;
+&lt;!-- we can exactly compute the integral of any polynomial order `\(2n-1\)` --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Gaussian quadrature takeaways --&gt;
+
+&lt;!-- Gaussian quadrature effectively discretizes some distribution `\(p(x)\)` --&gt;
+&lt;!-- into mass points (nodes) and probabilities (weights) for some other discrete distribution `\(\bar{p}(x)\)` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Given an approximation with `\(n\)` mass points, `\(X\)` and `\(\bar{X}\)` have identical moments up to order `\(2n\)`, --&gt;
+&lt;!-- and as `\(n\rightarrow\infty\)` we have a continuum of mass points and recover the continuous pdf --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- But what do we pick for the weighting function `\(w(x)\)`? --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Gauss-Legendre --&gt;
+
+&lt;!-- We can start out with a simple `\(w(x) = 1\)`, this gives us .hi-blue[Gauss-Legendre] quadrature --&gt;
+
+&lt;!-- This can approximate the integral of any function arbitrarily well by increasing `\(n\)` --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Gauss-Laguerre --&gt;
+
+&lt;!-- Sometimes we want to compute exponentially discounted sums like: `\(\int_I f(x) e^{-x} dx\)` --&gt;
+
+&lt;!-- The weighting function `\(e^{-x}\)` is Gauss-Laguerre quadrature --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Gauss-Hermite --&gt;
+
+&lt;!-- Sometimes we want to take expectations of normally distributed variables: `\(\int_I f(x) e^{-x^2} dx\)` --&gt;
+
+&lt;!-- There exist packages or look-up tables to get the prescribed weights and nodes for each of these schemes --&gt;
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
