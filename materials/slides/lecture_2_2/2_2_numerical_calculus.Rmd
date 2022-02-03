@@ -67,7 +67,7 @@ style_extra_css(css = extra_css)
 using Pkg
 Pkg.activate(".")
 Pkg.instantiate()
-Pkg.add("ForwardDiff"); Pkg.add("Distributions"); Pkg.add("QuadGK")
+Pkg.add("ForwardDiff"); Pkg.add("Distributions"); Pkg.add("QuantEcon")
 ```
 
 ---
@@ -1182,22 +1182,23 @@ $$\int_I f(x) e^{-x^2} dx$$
 It's a non-trivial task: we have to solve $2n$ nonlinear equations to get $n$ pairs $(x_i, w_n)$
 
 
-We'll use a package for that: `QuadGK`
+We'll use a package for that: `QuantEcon`
 - Another package `FastGaussQuadrature` does a better job with high-order integrals or weights with singularities 
+- `QuadGK` has methods to improve precision further with adaptive subdomains
 
 
 ---
 
-## Gaussian quadrature with `QuadGK`
+## Gaussian quadrature with `QuantEcon`
 
 Let's go back to our previous example and integrate $x^2$ from $0$ to $10$ again (the answer is 333.333...)
 
 ```{julia}
-using QuadGK;
+using QuantEcon;
 # Our generic function to integrate with Gaussian quadrature
 function integrate_gauss(f, a, b, N)
-    # This function get nodes and weights
-    x, w = gauss(N, a, b)
+    # This function get nodes and weights for Gauss-Legendre quadrature
+    x, w = qnwlege(N, a, b)
 
     # Calculate expectation
     expectation = sum(w .* f(x))
@@ -1207,7 +1208,7 @@ end;
 
 ---
 
-## Gaussian quadrature with `QuadGK`
+## Gaussian quadrature with `QuantEcon`
 
 
 ```{julia}
@@ -1220,6 +1221,18 @@ println("Integrating with 2 nodes:$(integrate_gauss(f, 0, 10, 2))")
 
 All we needed was 2 nodes!
 - We need 1000 draws with Monte Carlo and 100 nodes with midpoint to get limited approximations
+
+---
+
+## Other quadratures with `QuantEcon`
+
+`QuantEcon.jl` has a lot more to offer<sup>1</sup> 
+
+- Trapezoid (`qnwtrap`) and Simpson's (`qnwsimp`) rule
+- Gauss-Hermite (`qnwnorm`) or Gaussian with any continuous distribution (`qnwdist`)
+- Generic quadrature integration (`quadrect`)
+
+.footnote[Check out the documentation at [http://quantecon.github.io/QuantEcon.jl/latest/api/QuantEcon.html](http://quantecon.github.io/QuantEcon.jl/latest/api/QuantEcon.html)]
 
 ---
 

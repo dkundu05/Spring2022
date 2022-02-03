@@ -22,6 +22,13 @@ exclude: true
 
 ```r
 if (!require("pacman")) install.packages("pacman")
+```
+
+```
+## Loading required package: pacman
+```
+
+```r
 pacman::p_load(
   xaringanthemer, JuliaCall
 )
@@ -45,7 +52,7 @@ knitr::opts_hooks$set(fig.callout = function(options) {
 using Pkg
 Pkg.activate(".")
 Pkg.instantiate()
-Pkg.add("ForwardDiff"); Pkg.add("Distributions"); Pkg.add("QuadGK")
+Pkg.add("ForwardDiff"); Pkg.add("Distributions"); Pkg.add("QuantEcon")
 ```
 
 ---
@@ -877,7 +884,7 @@ integrate_mc(f, 0, 10, 1000)
 ```
 
 ```
-## 316.491596965279
+## 329.48899278735564
 ```
 
 Pretty close!
@@ -1239,23 +1246,24 @@ Sometimes we want to take expectations of functions of normally distributed vari
 It's a non-trivial task: we have to solve `\(2n\)` nonlinear equations to get `\(n\)` pairs `\((x_i, w_n)\)`
 
 
-We'll use a package for that: `QuadGK`
+We'll use a package for that: `QuantEcon`
 - Another package `FastGaussQuadrature` does a better job with high-order integrals or weights with singularities 
+- `QuadGK` has methods to improve precision further with adaptive subdomains
 
 
 ---
 
-## Gaussian quadrature with `QuadGK`
+## Gaussian quadrature with `QuantEcon`
 
 Let's go back to our previous example and integrate `\(x^2\)` from `\(0\)` to `\(10\)` again (the answer is 333.333...)
 
 
 ```julia
-using QuadGK;
+using QuantEcon;
 # Our generic function to integrate with Gaussian quadrature
 function integrate_gauss(f, a, b, N)
-    # This function get nodes and weights
-    x, w = gauss(N, a, b)
+    # This function get nodes and weights for Gauss-Legendre quadrature
+    x, w = qnwlege(N, a, b)
 
     # Calculate expectation
     expectation = sum(w .* f(x))
@@ -1265,7 +1273,7 @@ end;
 
 ---
 
-## Gaussian quadrature with `QuadGK`
+## Gaussian quadrature with `QuantEcon`
 
 
 
@@ -1283,13 +1291,25 @@ println("Integrating with 2 nodes:$(integrate_gauss(f, 0, 10, 2))")
 ```
 
 ```
-## Integrating with 2 nodes:333.3333333333333
+## Integrating with 2 nodes:333.3333333333334
 ```
 
 --
 
 All we needed was 2 nodes!
 - We need 1000 draws with Monte Carlo and 100 nodes with midpoint to get limited approximations
+
+---
+
+## Other quadratures with `QuantEcon`
+
+`QuantEcon.jl` has a lot more to offer&lt;sup&gt;1&lt;/sup&gt; 
+
+- Trapezoid (`qnwtrap`) and Simpson's (`qnwsimp`) rule
+- Gauss-Hermite (`qnwnorm`) or Gaussian with any continuous distribution (`qnwdist`)
+- Generic quadrature integration (`quadrect`)
+
+.footnote[Check out the documentation at [http://quantecon.github.io/QuantEcon.jl/latest/api/QuantEcon.html](http://quantecon.github.io/QuantEcon.jl/latest/api/QuantEcon.html)]
 
 ---
 
