@@ -1235,6 +1235,23 @@ All we needed was 2 nodes!
 .footnote[Check out the documentation at [http://quantecon.github.io/QuantEcon.jl/latest/api/QuantEcon.html](http://quantecon.github.io/QuantEcon.jl/latest/api/QuantEcon.html)]
 
 ---
+## .blue[Practice integration with `QuantEcon`]
+
+Let's integrate $f(x) = \frac{1}{x^2 + 1}$ from 0 to 1
+
+Tip: Type `?` in the REPL and the name of the function to read its documentation and learn how to call it
+
+
+1. Use `quadrect` to integrate using Monte Carlo
+  1. You will need to code your function to accept an array (`.` syntax)
+2. Use `qnwtrap` to integrate using the Trapezoid rule quadrature
+3. Use `qnwlege` to integrate using Gaussian quadrature
+
+--
+
+Do we know what is the analytic solution to this integral?
+
+---
 
 ## .blue[Course roadmap]
 
@@ -1244,7 +1261,7 @@ Up next:
 2. **Numerical operations and representations** 
    1. .gold[Numerical arithmetic] 
    2. .gold[Numerical differentiation and integration] 
-   3. **Function approximation** $\leftarrow$
-3. Systems of equations
+   3. .red[Function approximation: (postponed)]
+3. **Systems of equations** $\leftarrow$
 4. Optimization
 5. Structural estimation

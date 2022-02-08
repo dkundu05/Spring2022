@@ -1,0 +1,345 @@
+---
+title: "AGEC 652 - Lecture 3.1"
+subtitle: "Linear Equations"
+date: "Spring 2022"
+author: "Diego S. Cardoso"
+#institute: "Purdue University, Department of Agricultural Economics"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: '16:9'
+---
+exclude: true
+```{r setup}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  xaringanthemer, JuliaCall
+)
+
+#options(htmltools.dir.version = FALSE)
+
+knitr::opts_hooks$set(fig.callout = function(options) {
+  if (options$fig.callout) {
+    options$echo <- FALSE
+  }
+
+  knitr::opts_chunk$set(echo = TRUE, fig.align="center")
+  options
+})
+
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_accent(
+  base_color = "#8E6F3E", 
+  header_font_google = google_font("Josefin Sans"),
+  text_font_size = "28px",
+  colors = c(
+    red = "#f34213",
+    gold = "#CFB991",
+    gray = "#C0C0C0",
+    blue = "#295fbe",
+    black = "#000000"
+  )
+)
+
+extra_css <- list(
+  ".small" = list("font-size" = "90%"),
+  ".big" = list("font-size" = "125%"),
+  ".footnote" = list("font-size" = "60%"), 
+  ".full-width" = list(
+    display = "flex",
+    width   = "100%",
+    flex    = "1 1 auto"
+  )
+)
+
+style_extra_css(css = extra_css)
+
+```
+
+```{julia}
+using Pkg
+Pkg.activate(".")
+Pkg.instantiate()
+```
+
+---
+
+## .blue[Course roadmap]
+
+1. .gray[Intro to Scientific Computing]
+2. .gray[Numerical operations and representations]
+3. **Systems of equations** 
+  1. **Linear equations** $\leftarrow$ .blue[You are here]
+  2. Nonlinear equations
+4. Optimization
+5. Structural estimation
+
+
+---
+
+class: inverse, center, middle
+
+.footnote[\*These slides are based on Miranda & Fackler (2002), Judd (1998), and course materials by Ivan Rudik.]
+
+
+---
+
+## Linear equations in Economics
+
+(Systems of) Linear equations are very common in Economics
+
+$$Ax = b$$
+where $A$ is a $n \times n$ matrix, $b$ and $x$ are $n$-vectors
+
+Examples?
+
+--
+
+- Comparative statics
+- General equilibrium models with linear functions
+- Log-linearized models
+- Steady-state distributions of discrete stochastic processes
+
+---
+
+## Solving linear equations in Julia
+
+Solving linear systems is generally very easy in programming languages
+
+```{julia}
+A = [1 2 3; 3 0 1; 4 4 1]; b = [0; 3; 0];
+x = A\b # This is an optimized division, faster than inverting A (more on that later)
+```
+
+--
+
+- So why bother?
+
+---
+
+## Linear equations: Why bother?
+
+1. It's a *building block*: many methods decompose more complicated problems into sequences of linear problems
+  - Understanding how we solve linear systems is crucial to understanding other methods
+--
+
+2. It uses key concepts of numerical analysis, such as iterative methods
+  - Seeing these ideas in action with a familiar problem will help you understand more complex ones
+--
+
+3. Like any other numerical method, it is prone to limited precision issues that grow with repeated operations
+  - In linear systems we can see these issues in a transparent and intuitive way
+
+---
+
+## Solving linear equations
+
+OK, so how does the computer actually solve linear equations?
+
+Methods come in two flavors:
+
+1. Direct methods
+  - We solve it in one pass
+2. Iterative methods
+  - We solve the same problem repeatedly until our results converge to an answer
+
+---
+
+## Solving linear equations: direct methods
+
+
+Let's start with the simplest case: a *lower triangular* matrix
+
+$$
+\begin{bmatrix}
+a_{11} & 0      & 0      & \cdots & 0 \\
+a_{21} & a_{22} & 0      & \cdots & 0 \\
+a_{31} & a_{32} & a_{33} & \cdots & 0 \\
+a_{n1} & a_{n2} & a_{n3} & \cdots & a_{nn}
+\end{bmatrix}
+$$
+How do we solve this? 
+
+--
+
+Easy, forward substitution!
+
+---
+
+## Solving linear equations: forward substitution
+
+$$
+\begin{align}
+x_1 = &  b_1/a_{11} \\
+x_2 = & (b_2 - a_{21}x_1)/a_{22} \\
+x_3 = & (b_3 - a_{31}x_1 - a_{32}x_2)/a_{33} \\
+\vdots \\
+x_n = & (b_3 - a_{n1}x_1 - a_{n2}x_2 - \cdots)/a_{nn} \\
+\end{align}
+$$
+
+--
+
+We can write a simple algorithm to solve it: $x_i=\left(b_i-\sum^{i-1}_{j=1} a_{ij}x_{j}\right)$ for all $i$
+
+What if $A$ is *upper triangular*? We use *backward substitution* and just reverse the order
+
+--
+
+What is the complexity of this algorithm (in $O$ notation)? 
+
+---
+
+## Solving linear equations: forward substitution
+
+$x_i=\left(b_i-\sum^{i-1}_{j=1} a_{ij}x_{j}\right)$ for all $i$
+
+What is the complexity of this algorithm? 
+
+--
+
+There are:
+- $n$ divisions
+- $n(n-1)/2$ multiplications
+- $n(n-1)/2$ additions/subtractions
+
+Order of $n^2/2$ operations $\rightarrow O(n^2)$
+
+---
+
+## LU factorization
+
+*In practice we rarely need to solve triangular systems!* What if $A$ is not triangular?
+
+--
+
+1. We decompose $A$ into two matrices: one **U**pper triangular and one **L**ower triangular $\rightarrow A = LU$
+  - We use Gaussian elimination for that
+--
+
+2. Then, we solve the problem using a combination of forward and backward substitutions
+  - The system becomes $Ax = (LU)x = L\underbrace{(Ux)}_{y} = b$
+  - We solve $Ly = b$ using forward substitution
+  - Then $Ux = y$ using backward substitution
+
+This works for any non-singular matrix
+
+
+
+---
+
+## Why bother with this scheme?
+
+Why not just use another method like Cramer's rule?
+
+--
+
+**Speed!**
+
+--
+
+- LU is less than $O(n^3)$
+- Cramer's rule is $O(n!\times n)$
+
+--
+
+For a 10x10 system this can really matter:
+- LU factorization: 430 long operations (`*` and `/`)
+- Matrix inversion and multiplication: 1,100 long operations
+- Cramer: 40 million long operations!
+
+---
+
+## Example: LU vs Cramer
+
+Julia description of the division operator `\`:
+> If A is upper or lower triangular (or diagonal), no factorization of A is required and the system is solved with either forward or backward substitution. For non-triangular square matrices, an LU factorization is used.
+
+So we can do LU factorization approaches to solutions by just doing `x = A\b`, but we can write it ourselves as well
+
+---
+
+## Example: LU vs Cramer
+
+Cramer's Rule can be written as a simple loop:
+```{julia, results = 'hide'}
+function solve_cramer(A, b)
+
+    dets = Vector(undef, length(b))
+
+    for index in eachindex(b)
+        B = copy(A)
+        B[:, index] = b
+        dets[index] = det(B)
+    end
+
+    return dets ./ det(A)
+
+end
+```
+
+```{julia, results = 'hide'}
+n = 100
+A = rand(n, n)
+b = rand(n)
+```
+
+---
+
+## Example: LU vs Cramer
+
+Let's see the full results of the competition for a 10x10:
+```{julia}
+using BenchmarkTools
+cramer_time = @elapsed solve_cramer(A, b);
+cramer_allocation = @allocated solve_cramer(A, b);
+lu_time = @elapsed A\b;
+lu_allocation = @allocated A\b;
+
+println(
+"Cramer's rule solved in $cramer_time seconds and used $cramer_allocation kilobytes of memory.
+LU solved in $(lu_time) seconds and used $(lu_allocation) kilobytes of memory.
+LU is $(round(cramer_time/lu_time, digits = 0)) times faster and uses $(round(lu_allocation/cramer_allocation*100, digits = 2))%  of the memory.")
+```
+
+---
+
+
+## Example: LU vs matrix inversion
+
+Let's see the full results of the competition for a 10x10:
+```{julia}
+using BenchmarkTools
+invers_time = @elapsed ((A^-1)*b);
+invers_allocation = @allocated ((A^-1)*b);
+
+println(
+"Matrix inversion solved in $cramer_time seconds and used $cramer_allocation kilobytes of memory.
+LU solved in $(lu_time) seconds and used $(lu_allocation) kilobytes of memory.
+LU is $(round(invers_time/lu_time, digits = 2)) times faster and uses $(round(lu_allocation/invers_allocation*100, digits = 2))%  of the memory.")
+```
+
+---
+
+## Gaussian elimination
+
+We can do the following matrix operations *without changing the solution to the system*
+1. swapping rows
+2. multiplying by non-zero scalars
+3. add a scalar multiple of one row to another
+
+--
+
+Gaussian elimination uses that to turn a matrix $(IA)$ into $(LU)$
+
+---
+
+
+

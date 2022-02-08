@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>AGEC 652 - Lecture 3.1</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Diego S. Cardoso" />
+    <script src="3_1_linear_equations_files/header-attrs-2.11/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# AGEC 652 - Lecture 3.1
+## Linear Equations
+### Diego S. Cardoso
+### Spring 2022
+
+---
+
+exclude: true
+
+```r
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  xaringanthemer, JuliaCall
+)
+
+#options(htmltools.dir.version = FALSE)
+
+knitr::opts_hooks$set(fig.callout = function(options) {
+  if (options$fig.callout) {
+    options$echo &lt;- FALSE
+  }
+
+  knitr::opts_chunk$set(echo = TRUE, fig.align="center")
+  options
+})
+```
+
+
+
+
+```julia
+using Pkg
+Pkg.activate(".")
+Pkg.instantiate()
+```
+
+---
+
+## .blue[Course roadmap]
+
+1. .gray[Intro to Scientific Computing]
+2. .gray[Numerical operations and representations]
+3. **Systems of equations** 
+  1. **Linear equations** `\(\leftarrow\)` .blue[You are here]
+  2. Nonlinear equations
+4. Optimization
+5. Structural estimation
+
+
+---
+
+class: inverse, center, middle
+
+.footnote[\*These slides are based on Miranda &amp; Fackler (2002), Judd (1998), and course materials by Ivan Rudik.]
+
+
+---
+
+## Linear equations in Economics
+
+(Systems of) Linear equations are very common in Economics
+
+`$$Ax = b$$`
+where `\(A\)` is a `\(n \times n\)` matrix, `\(b\)` and `\(x\)` are `\(n\)`-vectors
+
+Examples?
+
+--
+
+- Comparative statics
+- General equilibrium models with linear functions
+- Log-linearized models
+- Steady-state distributions of discrete stochastic processes
+
+---
+
+## Solving linear equations in Julia
+
+Solving linear systems is generally very easy in programming languages
+
+
+```julia
+A = [1 2 3; 3 0 1; 4 4 1]; b = [0; 3; 0];
+x = A\b # This is an optimized division, faster than inverting A (more on that later)
+```
+
+```
+## 3-element Vector{Float64}:
+##   0.8823529411764706
+##  -0.9705882352941176
+##   0.3529411764705882
+```
+
+--
+
+- So why bother?
+
+---
+
+## Linear equations: Why bother?
+
+1. It's a *building block*: many methods decompose more complicated problems into sequences of linear problems
+  - Understanding how we solve linear systems is crucial to understanding other methods
+--
+
+2. It uses key concepts of numerical analysis, such as iterative methods
+  - Seeing these ideas in action with a familiar problem will help you understand more complex ones
+--
+
+3. Like any other numerical method, it is prone to limited precision issues that grow with repeated operations
+  - In linear systems we can see these issues in a transparent and intuitive way
+
+---
+
+## Solving linear equations
+
+OK, so how does the computer actually solve linear equations?
+
+Methods come in two flavors:
+
+1. Direct methods
+  - We solve it in one pass
+2. Iterative methods
+  - We solve the same problem repeatedly until our results converge to an answer
+
+---
+
+## Solving linear equations: direct methods
+
+
+Let's start with the simplest case: a *lower triangular* matrix
+
+$$
+`\begin{bmatrix}
+a_{11} &amp; 0      &amp; 0      &amp; \cdots &amp; 0 \\
+a_{21} &amp; a_{22} &amp; 0      &amp; \cdots &amp; 0 \\
+a_{31} &amp; a_{32} &amp; a_{33} &amp; \cdots &amp; 0 \\
+a_{n1} &amp; a_{n2} &amp; a_{n3} &amp; \cdots &amp; a_{nn}
+\end{bmatrix}`
+$$
+How do we solve this? 
+
+--
+
+Easy, forward substitution!
+
+---
+
+## Solving linear equations: forward substitution
+
+$$
+`\begin{align}
+x_1 = &amp;  b_1/a_{11} \\
+x_2 = &amp; (b_2 - a_{21}x_1)/a_{22} \\
+x_3 = &amp; (b_3 - a_{31}x_1 - a_{32}x_2)/a_{33} \\
+\vdots \\
+x_n = &amp; (b_3 - a_{n1}x_1 - a_{n2}x_2 - \cdots)/a_{nn} \\
+\end{align}`
+$$
+
+--
+
+We can write a simple algorithm to solve it: `\(x_i=\left(b_i-\sum^{i-1}_{j=1} a_{ij}x_{j}\right)\)` for all `\(i\)`
+
+What if `\(A\)` is *upper triangular*? We use *backward substitution* and just reverse the order
+
+--
+
+What is the complexity of this algorithm (in `\(O\)` notation)? 
+
+---
+
+## Solving linear equations: forward substitution
+
+`\(x_i=\left(b_i-\sum^{i-1}_{j=1} a_{ij}x_{j}\right)\)` for all `\(i\)`
+
+What is the complexity of this algorithm? 
+
+--
+
+There are:
+- `\(n\)` divisions
+- `\(n(n-1)/2\)` multiplications
+- `\(n(n-1)/2\)` additions/subtractions
+
+Order of `\(n^2/2\)` operations `\(\rightarrow O(n^2)\)`
+
+---
+
+## LU factorization
+
+*In practice we rarely need to solve triangular systems!* What if `\(A\)` is not triangular?
+
+--
+
+1. We decompose `\(A\)` into two matrices: one **U**pper triangular and one **L**ower triangular `\(\rightarrow A = LU\)`
+  - We use Gaussian elimination for that
+--
+
+2. Then, we solve the problem using a combination of forward and backward substitutions
+  - The system becomes `\(Ax = (LU)x = L\underbrace{(Ux)}_{y} = b\)`
+  - We solve `\(Ly = b\)` using forward substitution
+  - Then `\(Ux = y\)` using backward substitution
+
+This works for any non-singular matrix
+
+
+
+---
+
+## Why bother with this scheme?
+
+Why not just use another method like Cramer's rule?
+
+--
+
+**Speed!**
+
+--
+
+- LU is less than `\(O(n^3)\)`
+- Cramer's rule is `\(O(n!\times n)\)`
+
+--
+
+For a 10x10 system this can really matter:
+- LU factorization: 430 long operations (`*` and `/`)
+- Matrix inversion and multiplication: 1,100 long operations
+- Cramer: 40 million long operations!
+
+---
+
+## Example: LU vs Cramer
+
+Julia description of the division operator `\`:
+&gt; If A is upper or lower triangular (or diagonal), no factorization of A is required and the system is solved with either forward or backward substitution. For non-triangular square matrices, an LU factorization is used.
+
+So we can do LU factorization approaches to solutions by just doing `x = A\b`, but we can write it ourselves as well
+
+---
+
+## Example: LU vs Cramer
+
+Cramer's Rule can be written as a simple loop:
+
+```julia
+function solve_cramer(A, b)
+
+    dets = Vector(undef, length(b))
+
+    for index in eachindex(b)
+        B = copy(A)
+        B[:, index] = b
+        dets[index] = det(B)
+    end
+
+    return dets ./ det(A)
+
+end
+```
+
+
+```julia
+n = 100
+A = rand(n, n)
+b = rand(n)
+```
+
+---
+
+## Example: LU vs Cramer
+
+Let's see the full results of the competition for a 10x10:
+
+```julia
+using BenchmarkTools
+cramer_time = @elapsed solve_cramer(A, b);
+cramer_allocation = @allocated solve_cramer(A, b);
+lu_time = @elapsed A\b;
+lu_allocation = @allocated A\b;
+
+println(
+"Cramer's rule solved in $cramer_time seconds and used $cramer_allocation kilobytes of memory.
+LU solved in $(lu_time) seconds and used $(lu_allocation) kilobytes of memory.
+LU is $(round(cramer_time/lu_time, digits = 0)) times faster and uses $(round(lu_allocation/cramer_allocation*100, digits = 2))%  of the memory.")
+```
+
+```
+## Cramer's rule solved in 0.097413 seconds and used 16187072 kilobytes of memory.
+## LU solved in 0.0007821 seconds and used 81840 kilobytes of memory.
+## LU is 125.0 times faster and uses 0.51%  of the memory.
+```
+
+---
+
+
+## Example: LU vs matrix inversion
+
+Let's see the full results of the competition for a 10x10:
+
+```julia
+using BenchmarkTools
+invers_time = @elapsed ((A^-1)*b);
+invers_allocation = @allocated ((A^-1)*b);
+
+println(
+"Matrix inversion solved in $cramer_time seconds and used $cramer_allocation kilobytes of memory.
+LU solved in $(lu_time) seconds and used $(lu_allocation) kilobytes of memory.
+LU is $(round(invers_time/lu_time, digits = 2)) times faster and uses $(round(lu_allocation/invers_allocation*100, digits = 2))%  of the memory.")
+```
+
+```
+## Matrix inversion solved in 0.097413 seconds and used 16187072 kilobytes of memory.
+## LU solved in 0.0007821 seconds and used 81840 kilobytes of memory.
+## LU is 1.73 times faster and uses 61.46%  of the memory.
+```
+
+---
+
+## Gaussian elimination
+
+We can do the following matrix operations *without changing the solution to the system*
+1. swapping rows
+2. multiplying by non-zero scalars
+3. add a scalar multiple of one row to another
+
+--
+
+Gaussian elimination uses that to turn a matrix `\((IA)\)` into `\((LU)\)`
+
+---
+
+
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
