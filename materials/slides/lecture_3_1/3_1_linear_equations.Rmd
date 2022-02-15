@@ -158,11 +158,29 @@ Methods come in two flavors:
 Let's start with the simplest case: a *lower triangular* matrix
 
 $$
+A =
 \begin{bmatrix}
 a_{11} & 0      & 0      & \cdots & 0 \\
 a_{21} & a_{22} & 0      & \cdots & 0 \\
 a_{31} & a_{32} & a_{33} & \cdots & 0 \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
 a_{n1} & a_{n2} & a_{n3} & \cdots & a_{nn} \\
+\end{bmatrix}
+, x =
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+x_3 \\
+\vdots \\
+x_n
+\end{bmatrix}
+, b = 
+\begin{bmatrix}
+b_1 \\
+b_2 \\
+b_3 \\
+\vdots \\
+b_n
 \end{bmatrix}
 $$
 How do we solve this? 
@@ -187,7 +205,7 @@ $$
 
 --
 
-We can write a simple algorithm to solve it: $x_i=\left(b_i-\sum^{i-1}_{j=1} a_{ij}x_{j}\right)$ for all $i$
+We can write a simple algorithm to solve it: $x_i=\left(b_i-\sum^{i-1}_{j=1} a_{ij}x_{j}\right)/a_{nn}$ for all $i$
 
 What if $A$ is *upper triangular*? We use *backward substitution* and just reverse the order
 
@@ -199,7 +217,7 @@ What is the complexity of this algorithm (in $O$ notation)?
 
 ## Solving linear equations: forward substitution
 
-$x_i=\left(b_i-\sum^{i-1}_{j=1} a_{ij}x_{j}\right)$ for all $i$
+$x_i=\left(b_i-\sum^{i-1}_{j=1} a_{ij}x_{j}\right)/a_{nn}$ for all $i$
 
 What is the complexity of this algorithm? 
 
@@ -826,10 +844,10 @@ We don't use this method though because it is very particular: it only converges
 
 ---
 
-## Splitting matrix methods
+## Operator Splitting methods
 
 
-In a more useful method, we can rewrite $Ax =b$ as $Qx = b + (Q - A)x$ and choose some easily invertible matrix $Q$
+In a more useful method, we can rewrite $Ax=b$ as $Qx = b + (Q - A)x$ for some square matrix $Q$
 
 --
 
@@ -838,8 +856,22 @@ Rearranging, we get $x = Q^{-1}b + (I - Q^{-1}A)x$, which suggests the iterating
 $$x^{(k+1)} = Q^{-1}b + (I - Q^{-1}A)x^{(k)} $$
 --
 
-$Q$ is called the **splitting matrix**. Ideally, we choose it to satisfy
-1. $Q^{-1}b$ and $Q^{-1}a$ are easy to compute (e.g. diagonal or triangular matrices)
+It is easy to check that if $x^{(k+1)}=x^{(k)}$, then $x^{(k)}$ is a solution to $Ax=b$
+
+--
+
+- This approach can be used in nonlinear systems, too!
+
+---
+
+
+## Operator Splitting methods
+
+$Q$ is called the **splitting matrix**. That's because it effectively splits $A$ into $A = Q - P$
+
+In practice, we choose $Q$ so that
+
+1. $Q^{-1}b$ and $Q^{-1}a$ are easy to compute (like when $Q$ is diagonal or triangular)
 2. $||I - Q^{-1}A ||< 1$ so we know the iteration converges
 
 
@@ -851,14 +883,25 @@ When $Q$ is chosen to be a diagonal matrix with the same diagonal elements in $A
 
 --
 
-The intuition is simple: 
+The intuition is simple:  
 - For every equation in this system, we can always write $x_i = \frac{1}{a_{ii}}[b_i - \sum_{j \neq i}a_{ij}x_j]$
 - We use this equation to formulate the iteration rule
 
 $$x_i^{(k+1)} = \frac{1}{a_{ii}}[b_i - \sum_{j \neq i}a_{ij}x_j^{(k)}]$$ 
---
+
+---
+
+## Gauss-Jacobi method
+
+Iteration rule
+
+$$x_i^{(k+1)} = \frac{1}{a_{ii}}[b_i - \sum_{j \neq i}a_{ij}x_j^{(k)}]$$ 
 
 Then, we assume initial values $x_i^{(0)} \; \forall i$ and iterate all $x_i$ simultaneously *until convergence*
+
+--
+
+$\Rightarrow$ we turned a "$n$ equations with $n$ unknowns" into repeatedly solving $n$ equations with *1* unknown
 
 ---
 
@@ -868,7 +911,7 @@ Then, we assume initial values $x_i^{(0)} \; \forall i$ and iterate all $x_i$ si
 
 --
 
-This is a parameter we have to set
+This is a parameter you have to choose
 - Usually, we will set a `tolerance` value
 - Then, in each iteration, we take some metric of the difference $\delta_x$ between $x^{k+1}$ and $x^{k}$
 - If $d_x < $ `tolerance`, we stop iterating and declare $x^{k+1}$ our solution 
@@ -902,5 +945,616 @@ while (dx >= tol && iteration <= max_iterations)
 end
 ```
 
+
+---
+
+## Gauss-Seidel method
+
+The Gauss-Seidel method chooses $Q$ as an *upper triangular matrix* with the same elements in $A$ 
+
+--
+
+Here is the intuition behind it
+
+In Gauss-Jacobi, we only use a new guess $x^{(k+1)}$ after we've computed all $x_i^{(k+1)}$
+- For example, we use $x_1^{k}$ to calculate $x_2^{(k+1)}$ even though we already have $x_1^{(k+1)}$
+
+We can make faster use of information if we use our newly calculated guesses right away. That is what the *Gauss-Seidel method* does
+
+---
+
+## Gauss-Seidel method
+
+So, when we compute the new guess for $x_2$, we have $x_2^{(k+1)} = (b_2 - a_{21}x_1^{(k+1)} - a_{23}x_1^{(k)} - \dots)/a_{22}$ 
+
+This give the iteration rule
+
+$$x_i^{(k+1)} = \frac{1}{a_{ii}}[b_i - \sum_{j = 1}^{i-1}a_{ij}x_j^{(k+1)} - \sum_{j = i+1}^{n}a_{ij}x_j^{(k)} ]$$ 
+
+--
+
+Unlike Gauss-Jacobi, **in Gauss-Seidel the order equations matters**
+- This also makes Gauss-Seidel more flexible, because we can try different orders to get it to converge
+
+---
+
+## A visual example
+
+*Tâttonement* is an old concept (Walras, 1954) to describe how markets reach equilibrium by trial-and-error
+--
+
+1. An initial price is fixed
+2. Demanded and supplied quantities are announced based on that price
+3. If quantities don't match, a (Walrasian) auctioneer announces a new price and the process repeats until we reach an equilibrium
+  - If there is oversupply, lower the price
+  - If there is overdemand, raise the price
+
+--
+
+We can use this concept to illustrate iterative solution methods with linear demand/supply equations
+
+---
+
+## A visual example
+
+Let's consider the simple linear demand/supply problem
+- Inverse demand: $p = 10 - q$
+- Supply: $q = p/2 + 1$
+
+--
+
+To solve it, we form the system
+
+
+$$
+\begin{bmatrix}
+1 & 1 \\
+1 & -2 \\
+\end{bmatrix}
+\begin{bmatrix}
+p \\
+q \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+10 \\
+-2
+\end{bmatrix}
+$$
+
+--
+
+From Gauss-Jacobi iteration rule
+
+$$
+\begin{align*}
+p^{(k+1)} = (10 - q^{(k)})/1 & = 10 - q^{(k)}\\
+q^{(k+1)} = (-2 - p^{(k)})/(-2) & = 1 + p^{(k)}/2
+\end{align*}
+$$
+
+
+---
+
+## A visual example: Gauss-Jacobi
+
+But let's see how that rule comes from matrix form
+
+$$
+A=
+\begin{bmatrix}
+1 & 1 \\
+1 & -2 \\
+\end{bmatrix}
+\Rightarrow
+Q =
+\begin{bmatrix}
+1 & 0 \\
+0 & -2 \\
+\end{bmatrix}
+\Rightarrow
+Q^{-1} =
+\begin{bmatrix}
+1 & 0 \\
+0 & -1/2 \\
+\end{bmatrix}
+$$
+
+So $x^{(k+1)} = Q^{-1}b + (I - Q^{-1}A)x^{(k)}$ gives
+
+$$
+\begin{bmatrix}
+p^{(k+1)} \\
+q^{(k+1)} \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & 0 \\
+0 & -1/2 \\
+\end{bmatrix}
+\begin{bmatrix}
+10 \\
+-2
+\end{bmatrix}
++\left(
+\begin{bmatrix}
+1 & 0 \\
+0 & 1 \\
+\end{bmatrix}
+-
+\begin{bmatrix}
+1 & 0 \\
+0 & -1/2 \\
+\end{bmatrix}
+\begin{bmatrix}
+1 & 1 \\
+1 & -2 \\
+\end{bmatrix}
+\right)
+\begin{bmatrix}
+p^{(k)} \\
+q^{(k)} \\
+\end{bmatrix}
+$$
+--
+
+$$
+\begin{bmatrix}
+p^{(k+1)} \\
+q^{(k+1)} \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+10 \\
+1
+\end{bmatrix}
++
+\begin{bmatrix}
+0 & -1 \\
+1/2 & 0 \\
+\end{bmatrix}
+\begin{bmatrix}
+p^{(k)} \\
+q^{(k)} \\
+\end{bmatrix}
+$$
+
+
+---
+
+## A visual example: Gauss-Jacobi
+
+<div style="float:right">
+ <image src="figures/tattonement-Base.svg" height=550>
+</div>
+
+Let's start from initial guess $p_0=1$ and $q_0=4$ and see how Gauss-Jacobi proceeds
+
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+$p^{(k+1)} = 10 - q^{(k)}$
+
+---
+
+## A visual example: Gauss-Jacobi
+
+<div style="float:right">
+ <image src="figures/tattonement-GJ-0q.svg" height=550>
+</div>
+
+.blue[
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+$p^{(k+1)} = 10 - q^{(k)}$
+]
+
+So
+
+$q_1 = 1 + (4)/2 = 3$
+
+---
+
+## A visual example: Gauss-Jacobi
+
+<div style="float:right">
+ <image src="figures/tattonement-GJ-0p.svg" height=550>
+</div>
+
+.blue[
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+$p^{(k+1)} = 10 - q^{(k)}$
+]
+
+So
+
+$q_1 = 1 + (4)/2 = 3$
+
+$p_1 = 10 - 1 = 9$
+
+
+---
+
+## A visual example: Gauss-Jacobi
+
+<div style="float:right">
+ <image src="figures/tattonement-GJ-1.svg" height=550>
+</div>
+
+.blue[
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+$p^{(k+1)} = 10 - q^{(k)}$
+]
+
+So
+
+$q_1 = 1 + (4)/2 = 3$
+
+$p_1 = 10 - 1 = 9$
+
+And we move to $(3,9)$
+
+---
+
+## A visual example: Gauss-Jacobi
+
+<div style="float:right">
+ <image src="figures/tattonement-GJ-2.svg" height=550>
+</div>
+
+.blue[
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+$p^{(k+1)} = 10 - q^{(k)}$
+]
+
+Next, we get
+--
+
+$q_2 = 1 + (9)/2 = 5.5$
+
+$p_2 = 10 - 3 = 7$
+
+And we move to $(5.5,7)$
+
+---
+
+## A visual example: Gauss-Jacobi
+
+<div style="float:right">
+ <image src="figures/tattonement-GJ-3.svg" height=550>
+</div>
+
+.blue[
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+$p^{(k+1)} = 10 - q^{(k)}$
+]
+
+Then, we get
+--
+
+$q_3 = 1 + (7)/2 = 4.5$
+
+$p_3 = 10 - 5.5 = 4.5$
+
+And we move to $(4.5,4.5)$
+
+---
+
+## A visual example: Gauss-Jacobi
+
+<div style="float:right">
+ <image src="figures/tattonement-GJ-4.svg" height=550>
+</div>
+
+.blue[
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+$p^{(k+1)} = 10 - q^{(k)}$
+]
+
+And we continue to process until the difference between $(q^{(k+1)},p^{(k+1)})$ and $(q^{(k)},p^{(k)})$ is smaller than our `tolerance` parameter (i.e., it converges)
+
+
+---
+
+## A visual example: Gauss-Seidel
+
+The Gauss-Seidel iteration rules looks similar, but there is an important difference
+
+$$
+\begin{align*}
+q^{(k+1)} & = 1 + p^{(k)}/2 \\
+p^{(k+1)} & = 10 - \mathbf{q^{(k+1)}}
+\end{align*}
+$$
+--
+
+$p^{(k+1)}$ is a function of $q^{(k+1)}$, not $q^{(k)}$
+
+--
+
+- Note that we could plug the 1st equation into the 2nd: $p^{(k+1)}  = 9 - p^{(k)}/2$ 
+
+--
+
+- In this case, the example starts with an iteration over $q$. Starting with $p$ is also possible *but gives a different sequence of steps*
+
+
+---
+
+## A visual example: Gauss-Seidel
+
+Let's see how that rule comes from matrix form
+
+$$
+A=
+\begin{bmatrix}
+1 & 1 \\
+1 & -2 \\
+\end{bmatrix}
+\Rightarrow
+Q =
+\begin{bmatrix}
+1 & 1 \\
+0 & -2 \\
+\end{bmatrix}
+\Rightarrow
+Q^{-1} =
+\begin{bmatrix}
+1 & 1/2 \\
+0 & -1/2 \\
+\end{bmatrix}
+$$
+
+
+So $x^{(k+1)} = Q^{-1}b + (I - Q^{-1}A)x^{(k)}$ gives
+
+$$
+\begin{bmatrix}
+p^{(k+1)} \\
+q^{(k+1)} \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & 1/2 \\
+0 & -1/2 \\
+\end{bmatrix}
+\begin{bmatrix}
+10 \\
+-2
+\end{bmatrix}
++\left(
+\begin{bmatrix}
+1 & 0 \\
+0 & 1 \\
+\end{bmatrix}
+-
+\begin{bmatrix}
+1 & 1/2 \\
+0 & -1/2 \\
+\end{bmatrix}
+\begin{bmatrix}
+1 & 1 \\
+1 & -2 \\
+\end{bmatrix}
+\right)
+\begin{bmatrix}
+p^{(k)} \\
+q^{(k)} \\
+\end{bmatrix}
+$$
+
+$$
+\begin{bmatrix}
+p^{(k+1)} \\
+q^{(k+1)} \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+9 \\
+1
+\end{bmatrix}
++
+\begin{bmatrix}
+-1/2 & 0 \\
+1/2 & 0 \\
+\end{bmatrix}
+\begin{bmatrix}
+p^{(k)} \\
+q^{(k)} \\
+\end{bmatrix}
+$$
+
+
+---
+
+## A visual example: Gauss-Seidel
+
+<div style="float:right">
+ <image src="figures/tattonement-Base.svg" height=550>
+</div>
+
+Once again, we start from initial guess $p_0=1$ and $q_0=4$
+
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+$p^{(k+1)} = 10 - q^{(k)}$
+
+---
+
+## A visual example: Gauss-Seidel
+
+<div style="float:right">
+ <image src="figures/tattonement-GS-1.svg" height=550>
+</div>
+
+.blue[
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+
+$p^{(k+1)} = 10 - q^{(k+1)}$
+]
+
+So
+
+$q_1 = 1 + (4)/2 = 3$
+
+---
+
+## A visual example: Gauss-Seidel
+
+<div style="float:right">
+ <image src="figures/tattonement-GS-2.svg" height=550>
+</div>
+
+.blue[
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+
+$p^{(k+1)} = 10 - q^{(k+1)}$
+]
+
+So
+
+$q_1 = 1 + (4)/2 = 3$
+$p_1 = 10 - (3) = 7$
+
+
+---
+
+## A visual example: Gauss-Seidel
+
+<div style="float:right">
+ <image src="figures/tattonement-GS-3.svg" height=550>
+</div>
+
+.blue[
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+
+$p^{(k+1)} = 10 - q^{(k+1)}$
+]
+
+So
+
+$q_1 = 1 + (4)/2 = 3$
+$p_1 = 10 - (3) = 7$
+$q_2 = 1 + (7)/2 = 4.5$
+
+
+---
+
+## A visual example: Gauss-Seidel
+
+<div style="float:right">
+ <image src="figures/tattonement-GS-4.svg" height=550>
+</div>
+
+.blue[
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+
+$p^{(k+1)} = 10 - q^{(k+1)}$
+]
+
+So
+
+$q_1 = 1 + (4)/2 = 3$
+$p_1 = 10 - (3) = 7$
+$q_2 = 1 + (7)/2 = 4.5$
+$p_2 = 10 - 4.5 = 5.5$
+
+
+---
+
+## A visual example: Gauss-Seidel
+
+<div style="float:right">
+ <image src="figures/tattonement-GS-5.svg" height=550>
+</div>
+
+.blue[
+The iteration rules are
+$q^{(k+1)} = 1 + p^{(k)}/2$
+
+$p^{(k+1)} = 10 - q^{(k+1)}$
+]
+
+And we continue to process until the difference between $(q^{(k+1)},p^{(k+1)})$ and $(q^{(k)},p^{(k)})$ is smaller than our `tolerance` parameter (i.e., it converges)
+
+---
+
+## Acceleration and Stabilization methods
+
+When our iterations converge too slowly or diverge, we can try **acceleration** or **stabilization** methods
+- These concepts also work for nonlinear equations and optimization
+
+--
+
+These methods are conceptually simple: we will multiply our step $x^{(k)}\rightarrow x^{(k+1)}$ by a scalar $\omega$
+
+---
+
+## Acceleration and Stabilization methods
+
+- When $\omega > 1$, it's called **extrapolation**: we're taking a *bigger step*
+  - Idea: if the method converges, then the direction $x^{(k)}\rightarrow x^{(k+1)}$ is a good move, so it could be even better to go beyond $x^{(k+1)}$ and converge faster
+--
+
+- When $\omega < 1$, it's called **dampening**: we're taking a *smaller step*
+  - Idea: maybe the direction $x^{(k)}\rightarrow x^{(k+1)}$ is a good one, but we are overshooting, so if we stop short of $x^{(k+1)}$, we may get it to converge
+
+<div align="center">
+ <image src="figures/dampening_extrap.svg" height=250>
+</div>
+
+---
+
+## Acceleration and Stabilization methods
+
+Returning to our Gauss-Seidel example, **accelerating** the solution with **extrapolation** could look like this 
+
+<div align="center">
+ <image src="figures/tattonement-GS-extrap.svg" height=450>
+</div>
+
+
+---
+
+## Acceleration and Stabilization methods
+
+And, **stabilizing** the solution with **dampening** could look like this 
+
+<div align="center">
+ <image src="figures/tattonement-GS-dampen.svg" height=450>
+</div>
+
+
+---
+
+## Acceleration and Stabilization methods
+
+These methods don't always work, may it's a good idea to try if you are having issues with slow convergence or divergence
+
+We'll skip the technical details of when these methods work for operator splitting
+- You can find them in chapter 3 of Judd's textbook 
+
+
+---
+
+## .blue[Course roadmap]
+
+Up next
+
+1. .gray[Intro to Scientific Computing]
+2. .gray[Numerical operations and representations]
+3. **Systems of equations** 
+  1. .gold[Linear equations] 
+  2. **Nonlinear equations** $\leftarrow$
+4. Optimization
+5. Structural estimation
 
 
