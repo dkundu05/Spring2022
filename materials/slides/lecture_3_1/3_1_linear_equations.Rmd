@@ -1125,13 +1125,15 @@ $$
 ## A visual example: Gauss-Jacobi
 
 <div style="float:right">
- <image src="figures/tattonement-Base.svg" height=550>
+ <image src="figures/tattonement-Base.png" height=550>
 </div>
 
 Let's start from initial guess $q_0=1$ and $p_0=4$ and see how Gauss-Jacobi proceeds
 
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
+
 $p^{(k+1)} = 10 - q^{(k)}$
 
 ---
@@ -1139,12 +1141,14 @@ $p^{(k+1)} = 10 - q^{(k)}$
 ## A visual example: Gauss-Jacobi
 
 <div style="float:right">
- <image src="figures/tattonement-GJ-0q.svg" height=550>
+ <image src="figures/tattonement-GJ-0q.png" height=550>
 </div>
 
 .blue[
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
+
 $p^{(k+1)} = 10 - q^{(k)}$
 ]
 
@@ -1157,12 +1161,14 @@ $q_1 = 1 + (4)/2 = 3$
 ## A visual example: Gauss-Jacobi
 
 <div style="float:right">
- <image src="figures/tattonement-GJ-0p.svg" height=550>
+ <image src="figures/tattonement-GJ-0p.png" height=550>
 </div>
 
 .blue[
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
+
 $p^{(k+1)} = 10 - q^{(k)}$
 ]
 
@@ -1178,12 +1184,14 @@ $p_1 = 10 - 1 = 9$
 ## A visual example: Gauss-Jacobi
 
 <div style="float:right">
- <image src="figures/tattonement-GJ-1.svg" height=550>
+ <image src="figures/tattonement-GJ-1.png" height=550>
 </div>
 
 .blue[
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
+
 $p^{(k+1)} = 10 - q^{(k)}$
 ]
 
@@ -1200,12 +1208,14 @@ And we move to $(3,9)$
 ## A visual example: Gauss-Jacobi
 
 <div style="float:right">
- <image src="figures/tattonement-GJ-2.svg" height=550>
+ <image src="figures/tattonement-GJ-2.png" height=550>
 </div>
 
 .blue[
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
+
 $p^{(k+1)} = 10 - q^{(k)}$
 ]
 
@@ -1223,12 +1233,14 @@ And we move to $(5.5,7)$
 ## A visual example: Gauss-Jacobi
 
 <div style="float:right">
- <image src="figures/tattonement-GJ-3.svg" height=550>
+ <image src="figures/tattonement-GJ-3.png" height=550>
 </div>
 
 .blue[
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
+
 $p^{(k+1)} = 10 - q^{(k)}$
 ]
 
@@ -1246,12 +1258,14 @@ And we move to $(4.5,4.5)$
 ## A visual example: Gauss-Jacobi
 
 <div style="float:right">
- <image src="figures/tattonement-GJ-4.svg" height=550>
+ <image src="figures/tattonement-GJ-4.png" height=550>
 </div>
 
 .blue[
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
+
 $p^{(k+1)} = 10 - q^{(k)}$
 ]
 
@@ -1374,12 +1388,13 @@ $$
 ## A visual example: Gauss-Seidel
 
 <div style="float:right">
- <image src="figures/tattonement-Base.svg" height=550>
+ <image src="figures/tattonement-Base.png" height=550>
 </div>
 
 Once again, we start from initial guess $q_0=1$ and $p_0=4$
 
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
 
 $p^{(k+1)} = 10 - q^{(k+1)}$
@@ -1389,11 +1404,12 @@ $p^{(k+1)} = 10 - q^{(k+1)}$
 ## A visual example: Gauss-Seidel
 
 <div style="float:right">
- <image src="figures/tattonement-GS-1.svg" height=550>
+ <image src="figures/tattonement-GS-1.png" height=550>
 </div>
 
 .blue[
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
 
 $p^{(k+1)} = 10 - q^{(k+1)}$
@@ -1408,11 +1424,12 @@ $q_1 = 1 + (4)/2 = 3$
 ## A visual example: Gauss-Seidel
 
 <div style="float:right">
- <image src="figures/tattonement-GS-2.svg" height=550>
+ <image src="figures/tattonement-GS-2.png" height=550>
 </div>
 
 .blue[
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
 
 $p^{(k+1)} = 10 - q^{(k+1)}$
@@ -1421,6 +1438,7 @@ $p^{(k+1)} = 10 - q^{(k+1)}$
 So
 
 $q_1 = 1 + (4)/2 = 3$
+
 $p_1 = 10 - (3) = 7$
 
 
@@ -1429,11 +1447,12 @@ $p_1 = 10 - (3) = 7$
 ## A visual example: Gauss-Seidel
 
 <div style="float:right">
- <image src="figures/tattonement-GS-3.svg" height=550>
+ <image src="figures/tattonement-GS-3.png" height=550>
 </div>
 
 .blue[
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
 
 $p^{(k+1)} = 10 - q^{(k+1)}$
@@ -1442,7 +1461,9 @@ $p^{(k+1)} = 10 - q^{(k+1)}$
 So
 
 $q_1 = 1 + (4)/2 = 3$
+
 $p_1 = 10 - (3) = 7$
+
 $q_2 = 1 + (7)/2 = 4.5$
 
 
@@ -1451,11 +1472,12 @@ $q_2 = 1 + (7)/2 = 4.5$
 ## A visual example: Gauss-Seidel
 
 <div style="float:right">
- <image src="figures/tattonement-GS-4.svg" height=550>
+ <image src="figures/tattonement-GS-4.png" height=550>
 </div>
 
 .blue[
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
 
 $p^{(k+1)} = 10 - q^{(k+1)}$
@@ -1464,8 +1486,11 @@ $p^{(k+1)} = 10 - q^{(k+1)}$
 So
 
 $q_1 = 1 + (4)/2 = 3$
+
 $p_1 = 10 - (3) = 7$
+
 $q_2 = 1 + (7)/2 = 4.5$
+
 $p_2 = 10 - 4.5 = 5.5$
 
 
@@ -1474,11 +1499,12 @@ $p_2 = 10 - 4.5 = 5.5$
 ## A visual example: Gauss-Seidel
 
 <div style="float:right">
- <image src="figures/tattonement-GS-5.svg" height=550>
+ <image src="figures/tattonement-GS-5.png" height=550>
 </div>
 
 .blue[
 The iteration rules are
+
 $q^{(k+1)} = 1 + p^{(k)}/2$
 
 $p^{(k+1)} = 10 - q^{(k+1)}$
@@ -1509,7 +1535,7 @@ These methods are conceptually simple: we will multiply our step $x^{(k)}\righta
   - Idea: maybe the direction $x^{(k)}\rightarrow x^{(k+1)}$ is a good one, but we are overshooting, so if we stop short of $x^{(k+1)}$, we may get it to converge
 
 <div align="center">
- <image src="figures/dampening_extrap.svg" height=250>
+ <image src="figures/dampening_extrap.png" height=250>
 </div>
 
 ---
@@ -1519,7 +1545,7 @@ These methods are conceptually simple: we will multiply our step $x^{(k)}\righta
 Returning to our Gauss-Seidel example, **accelerating** the solution with **extrapolation** could look like this 
 
 <div align="center">
- <image src="figures/tattonement-GS-extrap.svg" height=450>
+ <image src="figures/tattonement-GS-extrap.png" height=450>
 </div>
 
 
@@ -1530,7 +1556,7 @@ Returning to our Gauss-Seidel example, **accelerating** the solution with **extr
 And, **stabilizing** the solution with **dampening** could look like this 
 
 <div align="center">
- <image src="figures/tattonement-GS-dampen.svg" height=450>
+ <image src="figures/tattonement-GS-dampen.png" height=450>
 </div>
 
 

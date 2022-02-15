@@ -22,13 +22,6 @@ exclude: true
 
 ```r
 if (!require("pacman")) install.packages("pacman")
-```
-
-```
-## Loading required package: pacman
-```
-
-```r
 pacman::p_load(
   xaringanthemer, JuliaCall
 )
@@ -556,9 +549,9 @@ LU is $(round(cramer_time/lu_time, digits = 0)) times faster
 ```
 
 ```
-## Cramer's rule solved in 9.6444746 seconds and used 16187072 kilobytes of memory.
-## LU solved in 0.456809 seconds and used 81840 kilobytes of memory.
-## LU is 21.0 times faster 
+## Cramer's rule solved in 2.5417579 seconds and used 16187072 kilobytes of memory.
+## LU solved in 0.0586789 seconds and used 81840 kilobytes of memory.
+## LU is 43.0 times faster 
 ##  and uses 0.51%  of the memory.
 ```
 
@@ -582,9 +575,9 @@ LU is $(round(invers_time/lu_time, digits = 2)) times faster
 ```
 
 ```
-## Matrix inversion solved in 9.6444746 seconds and used 16187072 kilobytes of memory.
-## LU solved in 0.456809 seconds and used 81840 kilobytes of memory.
-## LU is 1.13 times faster
+## Matrix inversion solved in 2.5417579 seconds and used 16187072 kilobytes of memory.
+## LU solved in 0.0586789 seconds and used 81840 kilobytes of memory.
+## LU is 0.47 times faster
 ##  and uses 61.46%  of the memory.
 ```
 
@@ -1173,13 +1166,15 @@ $$
 ## A visual example: Gauss-Jacobi
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-Base.svg" height=550&gt;
+ &lt;image src="figures/tattonement-Base.png" height=550&gt;
 &lt;/div&gt;
 
 Let's start from initial guess `\(q_0=1\)` and `\(p_0=4\)` and see how Gauss-Jacobi proceeds
 
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
+
 `\(p^{(k+1)} = 10 - q^{(k)}\)`
 
 ---
@@ -1187,12 +1182,14 @@ The iteration rules are
 ## A visual example: Gauss-Jacobi
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-GJ-0q.svg" height=550&gt;
+ &lt;image src="figures/tattonement-GJ-0q.png" height=550&gt;
 &lt;/div&gt;
 
 .blue[
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
+
 `\(p^{(k+1)} = 10 - q^{(k)}\)`
 ]
 
@@ -1205,12 +1202,14 @@ So
 ## A visual example: Gauss-Jacobi
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-GJ-0p.svg" height=550&gt;
+ &lt;image src="figures/tattonement-GJ-0p.png" height=550&gt;
 &lt;/div&gt;
 
 .blue[
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
+
 `\(p^{(k+1)} = 10 - q^{(k)}\)`
 ]
 
@@ -1226,12 +1225,14 @@ So
 ## A visual example: Gauss-Jacobi
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-GJ-1.svg" height=550&gt;
+ &lt;image src="figures/tattonement-GJ-1.png" height=550&gt;
 &lt;/div&gt;
 
 .blue[
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
+
 `\(p^{(k+1)} = 10 - q^{(k)}\)`
 ]
 
@@ -1248,12 +1249,14 @@ And we move to `\((3,9)\)`
 ## A visual example: Gauss-Jacobi
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-GJ-2.svg" height=550&gt;
+ &lt;image src="figures/tattonement-GJ-2.png" height=550&gt;
 &lt;/div&gt;
 
 .blue[
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
+
 `\(p^{(k+1)} = 10 - q^{(k)}\)`
 ]
 
@@ -1271,12 +1274,14 @@ And we move to `\((5.5,7)\)`
 ## A visual example: Gauss-Jacobi
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-GJ-3.svg" height=550&gt;
+ &lt;image src="figures/tattonement-GJ-3.png" height=550&gt;
 &lt;/div&gt;
 
 .blue[
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
+
 `\(p^{(k+1)} = 10 - q^{(k)}\)`
 ]
 
@@ -1294,12 +1299,14 @@ And we move to `\((4.5,4.5)\)`
 ## A visual example: Gauss-Jacobi
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-GJ-4.svg" height=550&gt;
+ &lt;image src="figures/tattonement-GJ-4.png" height=550&gt;
 &lt;/div&gt;
 
 .blue[
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
+
 `\(p^{(k+1)} = 10 - q^{(k)}\)`
 ]
 
@@ -1422,12 +1429,13 @@ $$
 ## A visual example: Gauss-Seidel
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-Base.svg" height=550&gt;
+ &lt;image src="figures/tattonement-Base.png" height=550&gt;
 &lt;/div&gt;
 
 Once again, we start from initial guess `\(q_0=1\)` and `\(p_0=4\)`
 
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
 
 `\(p^{(k+1)} = 10 - q^{(k+1)}\)`
@@ -1437,11 +1445,12 @@ The iteration rules are
 ## A visual example: Gauss-Seidel
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-GS-1.svg" height=550&gt;
+ &lt;image src="figures/tattonement-GS-1.png" height=550&gt;
 &lt;/div&gt;
 
 .blue[
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
 
 `\(p^{(k+1)} = 10 - q^{(k+1)}\)`
@@ -1456,11 +1465,12 @@ So
 ## A visual example: Gauss-Seidel
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-GS-2.svg" height=550&gt;
+ &lt;image src="figures/tattonement-GS-2.png" height=550&gt;
 &lt;/div&gt;
 
 .blue[
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
 
 `\(p^{(k+1)} = 10 - q^{(k+1)}\)`
@@ -1469,6 +1479,7 @@ The iteration rules are
 So
 
 `\(q_1 = 1 + (4)/2 = 3\)`
+
 `\(p_1 = 10 - (3) = 7\)`
 
 
@@ -1477,11 +1488,12 @@ So
 ## A visual example: Gauss-Seidel
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-GS-3.svg" height=550&gt;
+ &lt;image src="figures/tattonement-GS-3.png" height=550&gt;
 &lt;/div&gt;
 
 .blue[
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
 
 `\(p^{(k+1)} = 10 - q^{(k+1)}\)`
@@ -1490,7 +1502,9 @@ The iteration rules are
 So
 
 `\(q_1 = 1 + (4)/2 = 3\)`
+
 `\(p_1 = 10 - (3) = 7\)`
+
 `\(q_2 = 1 + (7)/2 = 4.5\)`
 
 
@@ -1499,11 +1513,12 @@ So
 ## A visual example: Gauss-Seidel
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-GS-4.svg" height=550&gt;
+ &lt;image src="figures/tattonement-GS-4.png" height=550&gt;
 &lt;/div&gt;
 
 .blue[
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
 
 `\(p^{(k+1)} = 10 - q^{(k+1)}\)`
@@ -1512,8 +1527,11 @@ The iteration rules are
 So
 
 `\(q_1 = 1 + (4)/2 = 3\)`
+
 `\(p_1 = 10 - (3) = 7\)`
+
 `\(q_2 = 1 + (7)/2 = 4.5\)`
+
 `\(p_2 = 10 - 4.5 = 5.5\)`
 
 
@@ -1522,11 +1540,12 @@ So
 ## A visual example: Gauss-Seidel
 
 &lt;div style="float:right"&gt;
- &lt;image src="figures/tattonement-GS-5.svg" height=550&gt;
+ &lt;image src="figures/tattonement-GS-5.png" height=550&gt;
 &lt;/div&gt;
 
 .blue[
 The iteration rules are
+
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
 
 `\(p^{(k+1)} = 10 - q^{(k+1)}\)`
@@ -1557,7 +1576,7 @@ These methods are conceptually simple: we will multiply our step `\(x^{(k)}\righ
   - Idea: maybe the direction `\(x^{(k)}\rightarrow x^{(k+1)}\)` is a good one, but we are overshooting, so if we stop short of `\(x^{(k+1)}\)`, we may get it to converge
 
 &lt;div align="center"&gt;
- &lt;image src="figures/dampening_extrap.svg" height=250&gt;
+ &lt;image src="figures/dampening_extrap.png" height=250&gt;
 &lt;/div&gt;
 
 ---
@@ -1567,7 +1586,7 @@ These methods are conceptually simple: we will multiply our step `\(x^{(k)}\righ
 Returning to our Gauss-Seidel example, **accelerating** the solution with **extrapolation** could look like this 
 
 &lt;div align="center"&gt;
- &lt;image src="figures/tattonement-GS-extrap.svg" height=450&gt;
+ &lt;image src="figures/tattonement-GS-extrap.png" height=450&gt;
 &lt;/div&gt;
 
 
@@ -1578,7 +1597,7 @@ Returning to our Gauss-Seidel example, **accelerating** the solution with **extr
 And, **stabilizing** the solution with **dampening** could look like this 
 
 &lt;div align="center"&gt;
- &lt;image src="figures/tattonement-GS-dampen.svg" height=450&gt;
+ &lt;image src="figures/tattonement-GS-dampen.png" height=450&gt;
 &lt;/div&gt;
 
 
