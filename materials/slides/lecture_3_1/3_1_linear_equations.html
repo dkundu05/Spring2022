@@ -556,9 +556,9 @@ LU is $(round(cramer_time/lu_time, digits = 0)) times faster
 ```
 
 ```
-## Cramer's rule solved in 2.3335835 seconds and used 16187072 kilobytes of memory.
-## LU solved in 0.2703414 seconds and used 81840 kilobytes of memory.
-## LU is 9.0 times faster 
+## Cramer's rule solved in 9.6444746 seconds and used 16187072 kilobytes of memory.
+## LU solved in 0.456809 seconds and used 81840 kilobytes of memory.
+## LU is 21.0 times faster 
 ##  and uses 0.51%  of the memory.
 ```
 
@@ -582,9 +582,9 @@ LU is $(round(invers_time/lu_time, digits = 2)) times faster
 ```
 
 ```
-## Matrix inversion solved in 2.3335835 seconds and used 16187072 kilobytes of memory.
-## LU solved in 0.2703414 seconds and used 81840 kilobytes of memory.
-## LU is 0.98 times faster
+## Matrix inversion solved in 9.6444746 seconds and used 16187072 kilobytes of memory.
+## LU solved in 0.456809 seconds and used 81840 kilobytes of memory.
+## LU is 1.13 times faster
 ##  and uses 61.46%  of the memory.
 ```
 
@@ -916,9 +916,9 @@ It is easy to check that if `\(x^{(k+1)}=x^{(k)}\)`, then `\(x^{(k)}\)` is a sol
 
 `\(Q\)` is called the **splitting matrix**. That's because it effectively splits `\(A\)` into `\(A = Q - P\)`
 
-In practice, we choose it `\(Q\)` so that
+In practice, we choose `\(Q\)` so that
 
-1. `\(Q^{-1}b\)` and `\(Q^{-1}a\)` are easy to compute (like diagonal or triangular matrices)
+1. `\(Q^{-1}b\)` and `\(Q^{-1}a\)` are easy to compute (like when `\(Q\)` is diagonal or triangular)
 2. `\(||I - Q^{-1}A ||&lt; 1\)` so we know the iteration converges
 
 
@@ -1176,7 +1176,7 @@ $$
  &lt;image src="figures/tattonement-Base.svg" height=550&gt;
 &lt;/div&gt;
 
-Let's start from initial guess `\(p_0=1\)` and `\(q_0=4\)` and see how Gauss-Jacobi proceeds
+Let's start from initial guess `\(q_0=1\)` and `\(p_0=4\)` and see how Gauss-Jacobi proceeds
 
 The iteration rules are
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
@@ -1425,11 +1425,12 @@ $$
  &lt;image src="figures/tattonement-Base.svg" height=550&gt;
 &lt;/div&gt;
 
-Once again, we start from initial guess `\(p_0=1\)` and `\(q_0=4\)`
+Once again, we start from initial guess `\(q_0=1\)` and `\(p_0=4\)`
 
 The iteration rules are
 `\(q^{(k+1)} = 1 + p^{(k)}/2\)`
-`\(p^{(k+1)} = 10 - q^{(k)}\)`
+
+`\(p^{(k+1)} = 10 - q^{(k+1)}\)`
 
 ---
 

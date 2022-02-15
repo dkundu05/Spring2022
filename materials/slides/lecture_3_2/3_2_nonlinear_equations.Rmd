@@ -1,0 +1,850 @@
+---
+title: "AGEC 652 - Lecture 3.2"
+subtitle: "Nonlinear Equations"
+date: "Spring 2022"
+author: "Diego S. Cardoso"
+#institute: "Purdue University, Department of Agricultural Economics"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: '16:9'
+---
+exclude: true
+```{r setup}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  xaringanthemer, JuliaCall
+)
+
+#options(htmltools.dir.version = FALSE)
+
+knitr::opts_hooks$set(fig.callout = function(options) {
+  if (options$fig.callout) {
+    options$echo <- FALSE
+  }
+
+  knitr::opts_chunk$set(echo = TRUE, fig.align="center")
+  options
+})
+
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_accent(
+  base_color = "#8E6F3E", 
+  header_font_google = google_font("Josefin Sans"),
+  text_font_size = "28px",
+  colors = c(
+    red = "#f34213",
+    gold = "#CFB991",
+    gray = "#C0C0C0",
+    blue = "#295fbe",
+    black = "#000000"
+  )
+)
+
+extra_css <- list(
+  ".small" = list("font-size" = "90%"),
+  ".big" = list("font-size" = "125%"),
+  ".footnote" = list("font-size" = "60%"), 
+  ".full-width" = list(
+    display = "flex",
+    width   = "100%",
+    flex    = "1 1 auto"
+  )
+)
+
+style_extra_css(css = extra_css)
+
+```
+
+```{julia}
+using Pkg
+Pkg.activate(".")
+Pkg.instantiate()
+```
+
+---
+
+## .blue[Course roadmap]
+
+1. .gray[Intro to Scientific Computing]
+2. .gray[Numerical operations and representations]
+3. **Systems of equations** 
+  1. .gold[Linear equations] 
+  2. Nonlinear equations $\leftarrow$ .blue[You are here]
+4. Optimization
+5. Structural estimation
+
+
+---
+
+class: inverse, center, middle
+
+.footnote[\*These slides are based on Miranda & Fackler (2002), Judd (1998), and course materials by Ivan Rudik.]
+
+
+---
+
+# Non-linear rootfinding
+
+With non-linear rootfinding problems we want to solve:
+
+$f(x) = 0, f:\mathbb{R}\rightarrow\mathbb{R}^n$
+
+--
+
+What's a common rootfinding problem?
+
+--
+
+Can we reframe a common economic problem as rootfinding?
+
+--
+
+Yes!
+
+--
+
+Fixed point problems are rootfinding problems:
+
+--
+
+$g(x) = x \Rightarrow f(x) \equiv g(x) - x = 0$
+
+---
+
+# Rootfinding with constraints
+
+Economic problems virtually always involve constraints
+
+--
+
+These constraints may or may not be binding
+
+--
+
+e.g. a firm profit max problem: a control vector $x$ may be constrained to be $x \in [a,b]$
+
+--
+
+This results in a complementarity problem:
+
+--
+
+
+\begin{align}
+x_i > a_i \Rightarrow f_i(x) \geq 0 \,\,\, \forall \, i=1,...,n \\
+x_i < b_i \Rightarrow f_i(x) \leq 0 \,\,\, \forall \, i=1,...,n
+\end{align}
+
+--
+
+What do these equations mean?
+
+---
+
+# Rootfinding with constraints
+
+\begin{align}
+x_i > a_i \Rightarrow f_i(x) \geq 0 \,\,\, \forall \, i=1,...,n \\
+x_i < b_i \Rightarrow f_i(x) \leq 0 \,\,\, \forall \, i=1,...,n
+\end{align}
+
+If the constraints on $x_i$ do not bind, $a_i < x_i < b_i$, then the first-order condition is precisely zero
+
+--
+
+Suppose the upper bound binds, $x_i = b_i$
+
+--
+
+Then $f_i(x) \geq 0$ since $x_i > a_i$, but we can't guarantee that $f_i(x) = 0$ because $f_i(x)$ might still be increasing
+
+---
+
+# Basic non-linear rootfinders: Bisection method
+
+What does the intermediate value theorem tell us?
+
+--
+
+If a continuous real-valued function on a given interval takes on two values $a$ and $b$,  
+it achieves all values in the set $[a,b]$ somewhere in its domain
+
+--
+
+How can this motivate an algorithm to find the root of a function?
+
+---
+
+# Basic non-linear rootfinders: Bisection method
+
+If we have a continuous, 1 variable function that is positive at some value and negative at another, a root must fall in between those values
+
+--
+
+We know a root exists by IVT, what's an efficient way to find it?
+
+--
+
+Continually bisect the interval!
+
+--
+
+.hi-blue[Write out the code to do it]
+
+---
+
+# The bisection algorithm
+
+```{julia}
+function bisection(f, lower_bound, upper_bound)
+    tolerance = 1e-3                                # tolerance for solution
+    guess = 0.5*(upper_bound + lower_bound)         # initial guess, bisect the interval
+    difference = (upper_bound - lower_bound)/2      # initialize bound difference
+
+    while difference > tolerance              # loop until convergence
+        println("Intermediate guess of $guess.")
+        difference = difference/2
+        if sign(f(lower_bound)) == sign(f(guess))   # if the guess has the same sign as the lower bound
+            lower_bound = guess                     # solution is in the upper half of the interval
+            guess = guess + difference
+        else                                        # else the solution is in the lower half of the interval
+            upper_bound = guess
+            guess = guess - difference
+        end
+        
+        
+        
+    end
+    println("The root of f(x) is at $guess.")
+end;
+```
+
+---
+
+# The bisection method
+
+```{julia}
+f(x) = x^3
+bisection(f, -4, 1)
+```
+
+---
+
+# The bisection method
+
+```{julia}
+g(x) = 3x^3 + 2x -4
+bisection(g, -6, 4)
+```
+
+---
+
+```{julia}
+h(x) = cos(x)
+bisection(h, -pi, pi)
+```
+
+---
+
+# The bisection method
+
+The bisection method works by continually bisecting the interval and only keeping the half interval with the zero until "convergence"
+
+1. Select the midpoint of $[a,b]$, $(a+b)/2$
+2. Zero must be in the lower or upper half
+3. Check the sign of the midpoint, if it has the same sign as the lower bound a root must be the right subinterval
+4. Select the midpoint of $[(a+b)/2,b]$...
+
+
+
+---
+
+# The bisection method
+
+
+The bisection method is incredibly robust: if a function $f$ satisfies the IVT, it is .hi-blue[guaranteed to converge in a specific number of iterations]
+
+--
+
+A root can be calculated to arbitrary precision $\epsilon$  
+in a maximum of $log([b-a]/\epsilon)/log(2)$ iterations
+
+Robustness comes with drawbacks:
+
+1. It only works in one dimension
+2. It is slow because it only uses information about the function's level
+
+---
+
+# Function iteration
+
+Fixed points can be computed using function iteration
+
+--
+
+Since we can recast fixed points as rootfinding problems we can use function iteration to find roots too
+
+--
+
+.hi-blue[Code up a function iteration problem]
+
+---
+
+# Function iteration
+
+Function iteration is pretty simple to implement
+
+```{julia}
+function function_iteration(f, guess)
+    tolerance = 1e-3                                # tolerance for solution
+    x_old = guess                                   # initialize old x value
+    x = 1e-10                                       # initialize current x
+    difference = 1e10                               # initialize bound difference
+
+    @time while abs(difference) > tolerance         # loop until convergence
+        println("Intermediate guess of $x.")
+        x = f(x_old)                                # new x = f(old x)
+        difference = x - x_old
+        x_old = x  
+    end
+    println("The fixed point of f(x) is at $x.")
+end;
+```
+
+---
+
+```{julia}
+f(x) = x^(-0.5)
+function_iteration(f, 2.)
+```
+
+---
+
+# Function iteration
+
+<div align="center">
+  <img src="figures/function_iteration.png" height=550>
+</div>
+
+---
+
+# Function iteration
+
+Function iteration can be quick, but is not always guaranteed to converge
+
+---
+
+# Newton's method
+
+Newton's method and variants are the workhorses of solving n-dimensional non-linear problems
+
+--
+
+What's the idea?
+
+--
+
+Take a hard non-linear problem and replace it with a sequence of linear problems
+
+--
+
+Under certain conditions the sequence of solutions will converge to the true solution
+
+---
+
+# Newton's method
+
+Here's a graphical depiction of Newton's method:
+<div align="center">
+  <img src="figures/newtons_method.png" height=450>
+</div>
+
+
+---
+
+# Newton's method
+
+<div style="float: right">
+  <img src="figures/newtons_method.png" height=450>
+</div>
+
+Start with an initial guess of the root at $x^{(0)}$
+
+--
+
+Approximate the non-linear function with its first-order Taylor expansion about $x^{(0)}$
+
+--
+
+This is just the tangent line at $x^0$, solve for the root of this linear approximation, call it $x^{(1)}$
+
+
+---
+
+# Newton's method
+
+<div style="float: right">
+  <img src="figures/newtons_method.png" height=450>
+</div>
+
+Repeat starting at $x^{(1)}$ until we converge to $x^*$
+
+--
+
+This can be applied to a function with an arbitrary number of dimensions
+
+---
+
+# Newton's method
+
+Begin with some initial guess of the root vector $\mathbf{x^{(0)}}$
+
+--
+
+
+Our new guess $\mathbf{x^{(k+1)}}$ given some arbitrary point in the algorithm, $\mathbf{x^{(k)}}$, is obtained by approximating $f(\mathbf{x})$ using a first-order Taylor expansion about $\mathbf{x^{(k)}}$ and solving for $\mathbf{x}$:
+\begin{gather}
+f(\mathbf{x}) \approx f(\mathbf{x^{(k)}}) + f'(\mathbf{x^{(k)}})(\mathbf{x^{(k+1)}}-\mathbf{x^{(k)}}) = 0 \notag \\
+\Rightarrow \mathbf{x^{(k+1)}} = \mathbf{x^{(k)}} - \left[f'(\mathbf{x^{(k)}})\right]^{-1}f(\mathbf{x^{(k)}}) \notag
+\end{gather}
+
+---
+
+# Newton's method
+
+.hi-blue[Code up Newton's method]
+
+--
+
+```{julia}
+function newtons_method(f, f_prime, guess)
+    diff = Inf     # Initialize problem
+    tol = 1e-5
+    x_old = guess
+    x = 1e10
+
+    while abs(diff) > tol
+        x = f(x_old) - f(x_old)/f_prime(x_old) # Root of linear approximation
+        diff = x - x_old
+        x_old = x
+    end
+    println("The root of f(x) is at $x.")
+end;
+```
+
+---
+
+# Newton's method
+
+```{julia}
+f(x) = x^3;
+f_prime(x) = 3x^2;
+newtons_method(f, f_prime, 1.)
+```
+
+--
+
+```{julia}
+f(x) = sin(x);
+f_prime(x) = cos(x);
+newtons_method(f, f_prime, pi/4)
+```
+
+---
+
+# Newton's method
+
+Newton's method has nice properties regarding convergence and speed:
+
+If $f(x)$ is continuously differentiable, the initial guess is "sufficiently close" to the root, and $f(x)$ is invertible near the root, then Newton's method converges to the root
+
+--
+
+What is "sufficiently close"?
+
+--
+
+We need $f(x)$ to be invertible so the algorithm above is well defined
+
+--
+
+If $f'(x)$ is ill-conditioned we can run into problems with rounding error
+
+---
+
+# Quasi-Newton: Secant method
+
+We usually don't want to deal with analytic derivatives unless we have access to autodifferentiation
+
+--
+
+Why?
+
+--
+
+1. Coding error / time
+2. Can actually be slower to evaluate than finite differences for a nonlinear problem, see [Ken Judd's notes](http://ice.uchicago.edu/2008 presentations/Judd/Curse in Dallas.pdf)
+
+--
+
+Alternative: finite differences instead of analytic derivatives
+
+--
+
+Using our current root guess $x^{(k)}$ and our previous root guess $x^{(k-1)}$:
+
+$f'(x^{(k)}) \approx \frac{f(x^{(k)})-f(x^{(k-1)})}{x^{(k)} - x^{(k-1)}}$
+
+---
+
+# Quasi-Newton: Secant method
+
+Our new iteration rule then becomes
+
+--
+
+$x^{(k+1)} = x^{(k)} - \frac{x^{(k)}-x^{(k-1)}}{f(x^{(k)})-f(x^{(k-1)})}f(x^{(k)})$
+
+--
+
+Now we require two initial guesses so that we have an initial approximation of the derivative
+
+---
+
+# Quasi-Newton: Secant method
+
+<div align="center">
+  <img src="figures/secant_method.png" height=550>
+</div>
+
+---
+
+# Quasi-Newton: Broyden's method
+
+Broyden's method is the most widely used rootfinding method for n-dimensional problems
+
+--
+
+It is a generalization of the secant method where have a sequence of guesses of the Jacobian at the root
+
+--
+
+We must initially provide a guess of the root, $x^{(0)}$, but also a guess of the Jacobian, $A_{(0)}$
+
+---
+
+# Quasi-Newton: Broyden's method
+
+Root guess update is the same as before but with our guess of the Jacobian substituted in for the actual Jacobian or the finite difference approximation
+
+$\mathbf{x^{(k+1)}} = \mathbf{x^{(k)}} - A_{(k)}^{-1} \, f(\mathbf{x^{(k)}}).$
+
+--
+
+we still need to update $A_{(k)}$: we do this update is performed by making the smallest change, in terms of the Frobenius matrix norm, that satisfies what is called the *secant condition* (under determined if $n>1$):
+$f(\mathbf{x^{(k+1)}}) - f(\mathbf{x^{(k)}}) = A_{(k+1)}\left( \mathbf{x^{(k+1)}} - \mathbf{x^{(k)}} \right)$
+
+---
+
+# Quasi-Newton: Broyden's method
+
+The updated differences in root guesses, and the function value at those root guesses, should align with our estimate of the Jacobian at that point
+
+--
+
+$$A_{(k+1)} = A_{(k)} + \\ \left[f(\mathbf{x^{(k+1)}}) - f(\mathbf{x^{(k)}}) - A_{(k+1)}\left( \mathbf{x^{(k+1)}} - \mathbf{x^{(k)}} \right)\right] \times \\ \frac{\mathbf{x^{(k+1)}} - \mathbf{x^{(k)}}}{(\mathbf{x^{(k+1)}} - \mathbf{x^{(k)}})^T(\mathbf{x^{(k+1)}} - \mathbf{x^{(k)}})}$$ 
+
+---
+
+# Accelerating Broyden
+
+Why update the Jacobian and then invert when we can just update an inverted Jacobian $B = A^{-1}$
+
+$B_{(k+1)} = B_{(k)} + \frac{[d^{(k)} - u^{(k)}]{d^{(k)}}^TB_{(k)}}{{d^{(k)}}^T u^{(k)}}$
+
+where $d^{(k)} = (\mathbf{x^{(k+1)}} - \mathbf{x^{(k)}})$, and $u^{(k)} = B_{(k)}\left[f(\mathbf{x^{(k+1)}})-f(\mathbf{x^{(k)}})\right]$.
+
+---
+
+# Accelerating Broyden
+
+Broyden converges under relatively weak conditions:
+
+--
+
+1. $f$ is continuously differentiable,
+2. $x^{(0)}$ is close to the root of $f$
+3. $f'$ is invertible around the root
+4. $A_0$ is sufficiently close to the Jacobian
+
+---
+
+# Convergence speed
+
+Rootfinding algorithms will converge at different speeds in terms of the number of operations
+
+--
+
+A sequence of iterates $x^{(k)}$ is said to converge to $x^*$ at a rate of order $p$ if there is a constant $C$ such that
+
+$||x^{(k+1)} - x^*|| \leq C||x^{(k)} - x^*||^p$
+
+for sufficiently large $k$
+
+---
+
+# Convergence speed
+
+$||x^{(k+1)} - x^*|| \leq C||x^{(k)} - x^*||^p$
+
+If $C < 1$ and $p = 1$, the rate of convergence is linear
+
+If $1 < p < 2$, convergence is superlinear, and if $p = 2$ convergence is quadratic. The higher order the convergence rate, the faster it converges
+
+---
+
+# Convergence speed
+
+How fast do the methods we've seen converge?
+
+--
+
+- Bisection: linear rate with $C = 0.5$ (kind of obvious once you see it)
+
+--
+
+- Function iteration: linear rate with $C = ||f'(x^*)||$
+
+--
+
+- Secant and Broyden: superlinear rate with $p \approx 1.62$
+
+--
+
+- Newton: $p = 2$
+
+---
+
+# Convergence speed
+
+Convergence rates only account for the number of .hi-blue[iterations] of the method 
+
+The steps taken in a given iteration of each solution method may vary in computational cost 
+because of differences in the number of arithmetic operations 
+
+Although an algorithm may take more iterations to solve,  
+each iteration may be solved faster and the overall algorithm takes less time
+
+---
+
+# Convergence speed
+
+Ex:
+
+- Bisection method only requires a single function evaluation during each iteration
+- Function iteration only requires a single function evaluation during each iteration
+- Broyden's method requires both a function evaluation and matrix multiplication
+- Newton's method requires a function evaluation, a derivative evaluation, and solving a linear system
+
+--
+
+Bisection and function iteration are usually slow
+
+Broyden's method can be faster than Newton's method if derivatives are costly to compute
+
+---
+
+# Convergence speed
+
+Consider an example where $f(x) = x - \sqrt(x) = 0$
+
+What does convergence look like across our main approaches in terms of the $L^1-$norm if all guesses start at $x^{(0)} = 0.5$?
+
+<div align="center">
+  <img src="figures/rootfinder_speed.png" height=400>
+</div>
+
+
+---
+
+# Complementarity problems: rootfinding
+
+Let: 
+
+- $x$ be an n-dimensional vector of some economic action
+- $a_i$ denotes a lower bound on action $i$, and $b_i$ denotes the upper bound on action $i$
+- $f_i(x)$ denotes the marginal arbitrage profit of action $i$
+
+--
+
+There are disequilibrium profit opportunities if 
+1. $x_i < b_i$ and $f_i(x) > 0$ (here we can increase profits by raising $x_i$)
+2. $x_i > a_i$ and $f_i(x) < 0$ (we can increase profits by decreasing $x_i$)
+
+---
+
+# Complementarity problems
+
+We obtain a no-arbitrage equilibrium if and only if $x$ solves the complementary problem $CP(f,a,b)$
+
+--
+
+We can write out the problem as finding a vector $x \in [a,b]$ that solves
+\begin{align}
+	x_i > a_i \Rightarrow f_i(x) \geq 0 \,\,\, \forall i = 1,...,n \notag\\ 
+	x_i < b_i \Rightarrow f_i(x) \leq 0 \,\,\, \forall i = 1,...,n \notag
+\end{align}
+
+--
+
+At interior solution, the function be precisely be zero
+
+Corner solution at the upper bound $b_i$ for $x_i$ $\rightarrow$ $f$ must be increasing in direction $i$
+
+The opposite is true if we are at the lower bound
+
+---
+
+# Complementarity problems
+
+Economic problems are complementarity problems where we are  
+finding a root of a function (e.g. marginal profit) subject to some constraint (e.g. price floors)
+
+The Karush-Kuhn-Tucker theorem shows that $x$ solves the constrained optimization problem 
+if and only if it solves the complementarity problem
+
+---
+
+# Complementarity problems
+
+.hi-blue[Example:] single commodity competitive spatial price equilibrium model
+
+- $n$ regions of the world
+- excess demand for the commodity in region $i$ is $E_i(p_i)$
+
+--
+
+If no trade $\rightarrow$ equilibrium condition is $E_i(p_i) = 0$ in all regions of the world: a simple rootfinding problem
+
+--
+
+Trade between regions has marginal transportation cost between regions $i$ and $j$ of $c_{ij}$
+
+- $x_{ij}$: the amount of the good shipped from region $i$ to region $j$
+- capacity constraint: $b_{ij}$
+
+---
+
+# Complementarity problems
+
+Marginal arbitrage profit from shipping a unit of the good from $i$ to $j$ is $p_j - p_i - c_{ij}$
+
+--
+
+If it's positive: incentive to ship more goods to region $i$ from region $j$
+
+If it's negative: incentive to decrease shipments
+
+--
+
+At an equilibrium only if all the arbitrage opportunities are gone: for all region pairs $i$ and $j$
+\begin{gather}
+	0 \leq x_{ij} \leq b_{ij} \notag \\
+	x_{ij} > 0 \Rightarrow p_j - p_i - c_{ij} \geq 0 \notag \\
+	x_{ij} < b_{ij} \Rightarrow p_j - p_i - c_{ij} \leq 0 \notag
+\end{gather}
+
+---
+
+# Complementarity problems
+
+At an equilibrium only if all the arbitrage opportunities are gone: for all region pairs $i$ and $j$
+\begin{gather}
+	0 \leq x_{ij} \leq b_{ij} \notag \\
+	x_{ij} > 0 \Rightarrow p_j - p_i - c_{ij} \geq 0 \notag \\
+	x_{ij} < b_{ij} \Rightarrow p_j - p_i - c_{ij} \leq 0 \notag
+\end{gather}
+
+
+
+---
+
+# Complementarity problems
+
+
+How do we formulate this as a complementarity problem? 
+
+--
+
+Market clearing in each region $i$ requires that net imports = excess demand
+
+--
+
+$$\sum_k [x_{ki} - x_{ik}] = E_i(p_i)$$
+
+--
+
+This implies that we can solve for the price in region $i$,
+
+$$p_i = E_i^{-1}\left( \sum_k [x_{ki} - x_{ik}]\right)$$
+---
+
+# Complementarity problems
+
+Finally, if we define marginal arbitrage profit from shipping another unit from $i$ to $j$ as
+
+$$f_{ij}(x) = E_j^{-1}\left( \sum_k[x_{kj} - x_{jk}] \right) - E_i^{-1}\left( \sum_k[x_{ki} - x_{ik}] \right) - c_{ij}$$
+
+then $x$ is an equilibrium vector of trade flows if and only if $x$ solves $CP(f,0,b)$ and $x$, $f$, and $b$ are $n^2 \times 1$  vectors
+
+Even this complex trade-equilibrium model can be reduced to a simple complementarity problem
+
+---
+
+# Complementarity problems
+
+Decentralized models can generally be solved by reducing them to complementarity problems, e.g:
+1. Competitive energy markets with cross-market cap and trade or capacity constraints
+2. Federalism models
+3. etc etc 
+
+---
+
+# Complementarity problems
+
+Four plots of marginal arbitrage profit $f_i(x)$, what is the equilibrium choice of $x$?
+
+<div align="center">
+  <img src="figures/complementarity.png" height=400>
+</div>
+
+---
+
+# How do we solve them?
+
+A complementarity problem $CP(f, a, b)$ can be re-framed as a rootfinding problem easily
+$$\hat{f}(x) = min(max(f(x),a-x),b-x) = 0$$
+
+<div align="center">
+  <img src="figures/complementarity_minmax.png" height=370>
+</div>
+
+---
+
+# How do we solve them?
+
+
+We can then solve the problem with conventional rootfinding techniques  
+or approximate this with a smooth function to make it easier on a rootfinder
+
+--
+
+The workhorse solver for complementarity problems is the PATH solver: Julia wrapper can be found [here](https://github.com/chkwon/Complementarity.jl)

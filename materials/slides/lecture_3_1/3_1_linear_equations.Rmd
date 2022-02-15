@@ -1128,7 +1128,7 @@ $$
  <image src="figures/tattonement-Base.svg" height=550>
 </div>
 
-Let's start from initial guess $p_0=1$ and $q_0=4$ and see how Gauss-Jacobi proceeds
+Let's start from initial guess $q_0=1$ and $p_0=4$ and see how Gauss-Jacobi proceeds
 
 The iteration rules are
 $q^{(k+1)} = 1 + p^{(k)}/2$
@@ -1377,11 +1377,12 @@ $$
  <image src="figures/tattonement-Base.svg" height=550>
 </div>
 
-Once again, we start from initial guess $p_0=1$ and $q_0=4$
+Once again, we start from initial guess $q_0=1$ and $p_0=4$
 
 The iteration rules are
 $q^{(k+1)} = 1 + p^{(k)}/2$
-$p^{(k+1)} = 10 - q^{(k)}$
+
+$p^{(k+1)} = 10 - q^{(k+1)}$
 
 ---
 
