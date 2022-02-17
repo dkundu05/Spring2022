@@ -77,7 +77,7 @@ Pkg.instantiate()
 2. .gray[Numerical operations and representations]
 3. **Systems of equations** 
   1. .gold[Linear equations] 
-  2. Nonlinear equations $\leftarrow$ .blue[You are here]
+  2. **Nonlinear equations** $\leftarrow$ .blue[You are here]
 4. Optimization
 5. Structural estimation
 
@@ -98,7 +98,7 @@ Problems involving nonlinear equations are very common in economics
 We can classify them into two types
 
 1. Systems of nonlinear equations
-2. Complementary problems
+2. Complementarity problems
 
  
 ---
@@ -342,18 +342,17 @@ function bisection(f, lo, up)
     difference = (up - lo)/2  # initialize bound difference
 
     while difference > tolerance         # loop until convergence
-        println("Intermediate guess: $mid.")
-        difference = difference/2
-        if sign(f(lo)) == sign(f(mid))   # if the guess has the same sign as the lower bound
-            lo = mid                     # a solution is in the upper half of the interval
-            mid = mid + difference
-        else                            # else the solution is in the lower half of the interval
+        println("Intermediate guess: $mid")
+        if sign(f(lo)) == sign(f(mid)) # if the guess has the same sign as the lower bound
+            lo = mid                   # a solution is in the upper half of the interval
+            mid = (lo + up)/2
+        else                           # else the solution is in the lower half of the interval
             up = mid
-            mid = mid - difference
+            mid = (lo + up)/2
         end
-        
+        difference = (up - lo)/2       # update the difference 
     end
-    println("The root of f(x) is $mid.")
+    println("The root of f(x) is $mid")
 end;
 ```
 
@@ -695,7 +694,7 @@ eta = 1.6; c = [0.6; 0.8]; # column vector
 ```
 
 
-$f(q)$ will return a vector (pay attention to the use of the dot syntax)
+$f(q)$ will return a vector (*pay attention to how I used the dot syntax*)
 
 ```{julia}
 function f(q)
@@ -812,6 +811,7 @@ function newtons_method_multidim(f, f_jacobian, initial_guess)
 Note that we only needed to change 2 things from the previous version:
 1. Our tolerance is now over the norm of the difference vector
 2. The "derivative" is a Jacobian matrix, so we multiply $f(x^{(k)})$ by the inverse of $J(x^{(k)})$
+  - We use operator `\` because it is more efficient than inverting $J$
 
 We also added a `return x` so that the function returns a solution
 
@@ -819,7 +819,7 @@ We also added a `return x` so that the function returns a solution
 
 ## Newton's method: a duopoly example
 
-Let's test it out with initial guess $(1,2)$
+Let's test it out with initial guess $(0.2, 0.2)$
 
 ```{julia}
 x = newtons_method_multidim(f, f_jacobian, [0.2; 0.2])
@@ -838,6 +838,13 @@ f(x)
 
 Pretty good result with quick convergence!
 
+--
+
+It was tedious but in the previous example we could calculate the Jacobian analytically. Sometimes it's much harder and we can make mistakes. 
+
+.blue[
+Here is a challenge for you: redo the previous example but, instead of defining the Jacobian analytically, use the ForwardDiff package to do the derivatives for you. Then, compare your solution with mine
+]
 
 ---
 
@@ -849,14 +856,5 @@ Visually, this is the path Newton's method followed
   <image src="figures/newtons_method_ex.png" height=450>
 </div>
 
-
-
----
-
-
-
-
-
-## Quasi-Newton: Secant method
 
 

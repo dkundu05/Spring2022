@@ -22,13 +22,6 @@ exclude: true
 
 ```r
 if (!require("pacman")) install.packages("pacman")
-```
-
-```
-## Loading required package: pacman
-```
-
-```r
 pacman::p_load(
   xaringanthemer, JuliaCall
 )
@@ -62,7 +55,7 @@ Pkg.instantiate()
 2. .gray[Numerical operations and representations]
 3. **Systems of equations** 
   1. .gold[Linear equations] 
-  2. Nonlinear equations `\(\leftarrow\)` .blue[You are here]
+  2. **Nonlinear equations** `\(\leftarrow\)` .blue[You are here]
 4. Optimization
 5. Structural estimation
 
@@ -83,7 +76,7 @@ Problems involving nonlinear equations are very common in economics
 We can classify them into two types
 
 1. Systems of nonlinear equations
-2. Complementary problems
+2. Complementarity problems
 
  
 ---
@@ -328,18 +321,17 @@ function bisection(f, lo, up)
     difference = (up - lo)/2  # initialize bound difference
 
     while difference &gt; tolerance         # loop until convergence
-        println("Intermediate guess: $mid.")
-        difference = difference/2
-        if sign(f(lo)) == sign(f(mid))   # if the guess has the same sign as the lower bound
-            lo = mid                     # a solution is in the upper half of the interval
-            mid = mid + difference
-        else                            # else the solution is in the lower half of the interval
+        println("Intermediate guess: $mid")
+        if sign(f(lo)) == sign(f(mid)) # if the guess has the same sign as the lower bound
+            lo = mid                   # a solution is in the upper half of the interval
+            mid = (lo + up)/2
+        else                           # else the solution is in the lower half of the interval
             up = mid
-            mid = mid - difference
+            mid = (lo + up)/2
         end
-        
+        difference = (up - lo)/2       # update the difference 
     end
-    println("The root of f(x) is $mid.")
+    println("The root of f(x) is $mid")
 end;
 ```
 
@@ -361,18 +353,18 @@ bisection(f, 0.2, 4.0)
 ```
 
 ```
-## Intermediate guess: 2.1.
-## Intermediate guess: 1.1500000000000001.
-## Intermediate guess: 1.625.
-## Intermediate guess: 1.3875.
-## Intermediate guess: 1.5062499999999999.
-## Intermediate guess: 1.446875.
-## Intermediate guess: 1.4765625.
-## Intermediate guess: 1.46171875.
-## Intermediate guess: 1.4691406249999999.
-## Intermediate guess: 1.4654296875.
-## Intermediate guess: 1.46728515625.
-## The root of f(x) is 1.466357421875.
+## Intermediate guess: 2.1
+## Intermediate guess: 1.1500000000000001
+## Intermediate guess: 1.625
+## Intermediate guess: 1.3875000000000002
+## Intermediate guess: 1.50625
+## Intermediate guess: 1.4468750000000001
+## Intermediate guess: 1.4765625
+## Intermediate guess: 1.4617187500000002
+## Intermediate guess: 1.469140625
+## Intermediate guess: 1.4654296875000001
+## Intermediate guess: 1.46728515625
+## The root of f(x) is 1.4663574218750002
 ```
 
 ---
@@ -400,17 +392,17 @@ bisection(f, 2.0, 4.0)
 ```
 
 ```
-## Intermediate guess: 3.0.
-## Intermediate guess: 3.5.
-## Intermediate guess: 3.75.
-## Intermediate guess: 3.875.
-## Intermediate guess: 3.9375.
-## Intermediate guess: 3.96875.
-## Intermediate guess: 3.984375.
-## Intermediate guess: 3.9921875.
-## Intermediate guess: 3.99609375.
-## Intermediate guess: 3.998046875.
-## The root of f(x) is 3.9990234375.
+## Intermediate guess: 3.0
+## Intermediate guess: 3.5
+## Intermediate guess: 3.75
+## Intermediate guess: 3.875
+## Intermediate guess: 3.9375
+## Intermediate guess: 3.96875
+## Intermediate guess: 3.984375
+## Intermediate guess: 3.9921875
+## Intermediate guess: 3.99609375
+## Intermediate guess: 3.998046875
+## The root of f(x) is 3.9990234375
 ```
 
 ---
@@ -773,7 +765,7 @@ eta = 1.6; c = [0.6; 0.8]; # column vector
 ```
 
 
-`\(f(q)\)` will return a vector (pay attention to the use of the dot syntax)
+`\(f(q)\)` will return a vector (*pay attention to how I used the dot syntax*)
 
 
 ```julia
@@ -905,6 +897,7 @@ function newtons_method_multidim(f, f_jacobian, initial_guess)
 Note that we only needed to change 2 things from the previous version:
 1. Our tolerance is now over the norm of the difference vector
 2. The "derivative" is a Jacobian matrix, so we multiply `\(f(x^{(k)})\)` by the inverse of `\(J(x^{(k)})\)`
+  - We use operator `\` because it is more efficient than inverting `\(J\)`
 
 We also added a `return x` so that the function returns a solution
 
@@ -912,7 +905,7 @@ We also added a `return x` so that the function returns a solution
 
 ## Newton's method: a duopoly example
 
-Let's test it out with initial guess `\((1,2)\)`
+Let's test it out with initial guess `\((0.2, 0.2)\)`
 
 
 ```julia
@@ -957,6 +950,13 @@ f(x)
 
 Pretty good result with quick convergence!
 
+--
+
+It was tedious but in the previous example we could calculate the Jacobian analytically. Sometimes it's much harder and we can make mistakes. 
+
+.blue[
+Here is a challenge for you: redo the previous example but, instead of defining the Jacobian analytically, use the ForwardDiff package to do the derivatives for you. Then, compare your solution with mine
+]
 
 ---
 
@@ -968,15 +968,6 @@ Visually, this is the path Newton's method followed
   &lt;image src="figures/newtons_method_ex.png" height=450&gt;
 &lt;/div&gt;
 
-
-
----
-
-
-
-
-
-## Quasi-Newton: Secant method
 
 
     </textarea>
