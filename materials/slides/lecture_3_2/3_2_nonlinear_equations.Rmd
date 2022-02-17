@@ -490,7 +490,7 @@ A fixed point $x = g(x)$ is at the intersection between $g(x)$ and the 45<sup>o<
 
 Function iteration is guaranteed to converge to a fixed point $x^*$ if
 1. $g$ is differentiable, and
-2. the initial guess is "sufficiently close" an $x^*$ at which $||g^\prime (x^*) || <1 $
+2. the initial guess is "sufficiently close" an $x^*$ at which $\|g^\prime (x^{*}) \| < 1$
 
 It may also converge when these conditions are not met
 

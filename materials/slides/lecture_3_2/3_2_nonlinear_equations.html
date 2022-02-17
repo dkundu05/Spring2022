@@ -22,6 +22,13 @@ exclude: true
 
 ```r
 if (!require("pacman")) install.packages("pacman")
+```
+
+```
+## Loading required package: pacman
+```
+
+```r
 pacman::p_load(
   xaringanthemer, JuliaCall
 )
@@ -542,7 +549,7 @@ A fixed point `\(x = g(x)\)` is at the intersection between `\(g(x)\)` and the 4
 
 Function iteration is guaranteed to converge to a fixed point `\(x^*\)` if
 1. `\(g\)` is differentiable, and
-2. the initial guess is "sufficiently close" an `\(x^*\)` at which $||g^\prime (x^*) || &lt;1 $
+2. the initial guess is "sufficiently close" an `\(x^*\)` at which `\(\|g^\prime (x^{*}) \| &lt; 1\)`
 
 It may also converge when these conditions are not met
 
