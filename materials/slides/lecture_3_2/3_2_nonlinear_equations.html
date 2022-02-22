@@ -22,6 +22,13 @@ exclude: true
 
 ```r
 if (!require("pacman")) install.packages("pacman")
+```
+
+```
+## Loading required package: pacman
+```
+
+```r
 pacman::p_load(
   xaringanthemer, JuliaCall
 )
@@ -45,6 +52,7 @@ knitr::opts_hooks$set(fig.callout = function(options) {
 using Pkg
 Pkg.activate(".")
 Pkg.instantiate()
+#Pkg.add("NLsolve")
 ```
 
 ---
@@ -969,6 +977,406 @@ Visually, this is the path Newton's method followed
 &lt;/div&gt;
 
 
+---
+
+## Quasi-Newton methods
+
+We usually don't want to deal with analytic derivatives unless we have access to autodifferentiation
+
+Why?
+
+--
+
+1. It can be difficult to do the analytic derivation
+2. Coding a complicate Jacobian is prone to errors and takes time
+3. Can actually be slower to evaluate than finite differences for a nonlinear problem
+
+--
+
+Alternative `\(\rightarrow\)` *finite differences* instead of analytic derivatives
+
+
+---
+
+## Quasi-Newton: Secant method
+
+Using our current root guess `\(x^{(k)}\)` and our previous root guess `\(x^{(k-1)}\)`:
+
+$$
+f'(x^{(k)}) \approx \frac{f(x^{(k)})-f(x^{(k-1)})}{x^{(k)} - x^{(k-1)}}
+$$
+
+--
+
+Our new iteration rule then becomes
+
+$$
+x^{(k+1)} = x^{(k)} - \frac{x^{(k)}-x^{(k-1)}}{f(x^{(k)})-f(x^{(k-1)})}f(x^{(k)})
+$$
+
+--
+
+Now we **require two initial guesses** so that we have an initial approximation of the derivative
+
+---
+
+## Quasi-Newton: Secant method
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/secant_method.png" height=450&gt;
+&lt;/div&gt;
+
+---
+
+## Quasi-Newton: Broyden's method
+
+Broyden's method is the most widely used rootfinding method for n-dimensional problems
+- This is a generalization of the secant method where have a *sequence of guesses of the Jacobian at the root*
+
+--
+
+It also relies on a 1st-order Taylor expansion about `\(\mathbf{x}\)`, but now in n dimensions
+
+$$
+f(\mathbf{x}) \approx f(\mathbf{x^{(k)}}) + A^{(k)} (\mathbf{x} - \mathbf{x^{(k)}}) = 0
+$$
+
+--
+
+We must initially provide a guess of the root, `\(x^{(0)}\)`, but also a guess of the Jacobian, `\(A_{(0)}\)`
+- A good guess for `\(A_{(0)}\)` is to calculate it numerically at our chosen `\(x^{(0)}\)`
+
+---
+
+## Quasi-Newton: Broyden's method
+
+The iteration rule is the same as before but with our guess of the Jacobian substituted in for the actual Jacobian (or the finite difference approximation)
+
+$$
+\mathbf{x^{(k+1)}} \leftarrow \mathbf{x^{(k)}} - (A^{(k)})^{-1} \, f(\mathbf{x^{(k)}})
+$$
+
+--
+
+We still need to update `\(A_{(k)}\)`: the ideia of Broyden's method is to choose a new Jacobian that satisfies the multidimensional **secant condition**
+
+$$
+f(\mathbf{x^{(k+1)}}) - f(\mathbf{x^{(k)}}) = A^{(k+1)}\left( \mathbf{x^{(k+1)}} - \mathbf{x^{(k)}} \right)
+$$
+- Any reasonable guess for the Jacobian should satisfy this condition
+
+--
+
+But this gives `\(n\)` conditions with `\(n^2\)` elements to solve for in `\(A\)`
+
+
+
+---
+
+## Quasi-Newton: Broyden's method
+
+Broyden's methods solves this under-determined problem with an assumption that focuses on the direction we are most interested in: `\(d^{(k)} = \mathbf{x^{(k+1)}} - \mathbf{x^{(k)}}\)`
+
+For any direction `\(q\)` orthogonal to `\(d^{(k)}\)`, it assumes that `\(A^{(k+1)}q = A^{(k)}q\)`
+- In other words, our next guess is as good as the current ones for any changes in `\(x\)` that are orthogonal to the one we are interested right now
+
+--
+
+Jointly, the secant condition and the orthogonality assumption give the iteration rule for the Jacobian:
+--
+
+$$
+A^{(k+1)} \leftarrow A^{(k)} + \left[f(\mathbf{x^{(k+1)}}) - f(\mathbf{x^{(k)}}) - A^{(k)}d^{(k)}\right] \frac{d^{(k)T}}{d^{(k)T}d^{(k)}}
+$$ 
+---
+
+## Quasi-Newton: Broyden's method
+
+The general algorithm for Broyden's method is:
+
+1. Choose an initial guess for the root `\(\mathbf{x}^{(0)}\)` and the Jacobian `\(A^{(0)}\)`
+2. Calculate the next guess for the root: `\(\mathbf{x}^{(k+1)}\)` 
+3. Calculate the next guess for the Jacobian: `\(A^{(k+1)}\)`
+4. Repeat 2 and 3 until convergence: `\(\|\mathbf{x}^{(k+1)} - \mathbf{x}^{(k)} \| \leq tolerance\)`  
+
+---
+
+## Quasi-Newton: Broyden's method
+
+One costly part of Broyden's method is that we update the Jacobian and "invert" it every iteration
+
+--
+
+But, since we only need the Jacobian's inverse to update `\(\mathbf{x}\)`, we can make it faster by updating the inverse Jacobian directly
+
+$$
+B^{(k+1)} = B^{(k)} + \frac{[d^{(k)} - u^{(k)}]{d^{(k)T}}B_{(k)}}{{d^{(k)T}} u^{(k)}}
+$$
+
+where `\(u^{(k)} = B^{(k)}\left[f(\mathbf{x^{(k+1)}})-f(\mathbf{x^{(k)}})\right]\)`
+
+- Most canned implementations of Broyden's method use the inverse update rule
+
+---
+
+## Quasi-Newton: Broyden's method
+
+Broyden converges under relatively weak conditions:
+
+
+1. `\(f\)` is continuously differentiable,
+2. `\(x^{(0)}\)` is "close" to the root of `\(f\)`
+3. `\(f'\)` is invertible around the root
+4. `\(A_0\)` is sufficiently close to the Jacobian
+
+---
+
+## Broyden's method: a duopoly example
+
+Let's revisit our previous example but now solve it using Broyden's method
+
+We won't code it by hand. Instead, we use package `NLsolve.jl`
+
+Function `NLsolve.nlsolve` has a ton of options to solve nonlinear equations
+
+--
+
+Once again, we are looking a pair `\((q_1, q_2)\)` which are roots to two nonlinear equations
+
+$$
+`\begin{align*}
+f_1(q_1, q_2) &amp; = (q_1 + q_2)^{-1/\eta} - (1/\eta)(q_1 + q_2)^{-1/\eta-1}q_1 - c_1 q_1 = 0 \\
+f_2(q_1, q_2) &amp; = (q_1 + q_2)^{-1/\eta} - (1/\eta)(q_1 + q_2)^{-1/\eta-1}q_2 - c_2 q_2 = 0
+\end{align*}`
+$$
+
+
+---
+
+## Broyden's method: a duopoly example
+
+Using our previously defined `\(f\)`, we run
+
+
+```julia
+using NLsolve
+NLsolve.nlsolve(f, [1.0; 2.0], method=:broyden,
+                xtol=:1e-8, ftol=:0.0, iterations=:1000, show_trace=:true)
+```
+
+```
+Results of Nonlinear Solver Algorithm
+ * Algorithm: broyden without line-search
+ * Starting Point: [1.0, 2.0]
+ * Zero: [0.8395676035355293, 0.6887964311629567]
+ * Inf-norm of residuals: 0.000000
+ * Iterations: 10
+ * Convergence: true
+   * |x - x'| &lt; 1.0e-08: true
+   * |f(x)| &lt; 0.0e+00: false
+ * Function Calls (f): 37
+ * Jacobian Calls (df/dx): 0
+```
+
+
+---
+
+## Broyden's method: a duopoly example
+
+- The first and second arguments are `\(f\)` and an initial guess
+  - `nlsolve` will automatically generate a Jacobian guess for us
+- `method=:broyden` tells `nlsolve` to use Broyden's methods
+
+--
+
+The other arguments are optional
+- `xtol` is the convergence tolerance over `\(x\)`: `\(\| \mathbf{x^{(k+1)}} - \mathbf{x^{(k)}} \| \leq\)` `xtol` (default is `0.0` meaning no criterion)
+- `ftol` is the convergence tolerance over `\(f(x)\)`: `\(\| f(\mathbf{x^{(k+1)}}) - f(\mathbf{x^{(k)}}) \| \leq\)` `ftol` (default is `1e-8`)
+- `iterations` set the maximum number of iterations before declaring non-convergence (default is `1000`)
+- `show_trace` will print all the iterations if you set to `true` (default is `false`)
+
+---
+
+## NLsolve.jl
+
+We can use this package to solve with Newton's method as well. Here we make use of the analytic Jacobian we defined earlier 
+
+
+
+```julia
+NLsolve.nlsolve(f, f_jacobian, [1.0; 2.0], method=:newton,
+                xtol=:1e-8, ftol=:0.0, iterations=:1000)
+```
+
+```
+Results of Nonlinear Solver Algorithm
+ * Algorithm: Newton with line-search
+ * Starting Point: [1.0, 2.0]
+ * Zero: [0.8395676017146293, 0.6887964307621443]
+ * Inf-norm of residuals: 0.000000
+ * Iterations: 21
+ * Convergence: true
+   * |x - x'| &lt; 1.0e-08: true
+   * |f(x)| &lt; 0.0e+00: false
+ * Function Calls (f): 22
+ * Jacobian Calls (df/dx): 22
+```
+
+**Note: For Problem Set 2, you can't use nlsolve**
+
+---
+
+## NLsolve.jl
+
+If you omit the Jacobian, `nlsolve` will calculate it numerically for you using centered finite differencing
+
+
+```julia
+NLsolve.nlsolve(f, [1.0; 2.0], method=:newton,
+                xtol=:1e-8, ftol=:0.0, iterations=:1000)
+```
+
+```
+Results of Nonlinear Solver Algorithm
+ * Algorithm: Newton with line-search
+ * Starting Point: [1.0, 2.0]
+ * Zero: [0.83956760353566, 0.6887964311630005]
+ * Inf-norm of residuals: 0.000000
+ * Iterations: 5
+ * Convergence: true
+   * |x - x'| &lt; 1.0e-08: true
+   * |f(x)| &lt; 0.0e+00: false
+ * Function Calls (f): 6
+ * Jacobian Calls (df/dx): 6
+ ```
+
+---
+
+## NLsolve.jl
+
+You can add argument `autodiff=:forward` to use forward autodifferentiation instead of finite differences
+
+
+```julia
+NLsolve.nlsolve(f, [1.0; 2.0], method=:newton, autodiff=:forward,
+                xtol=:1e-8, ftol=:0.0, iterations=:1000)
+```
+
+```
+Results of Nonlinear Solver Algorithm
+ * Algorithm: Newton with line-search
+ * Starting Point: [1.0, 2.0]
+ * Zero: [0.8395676035356598, 0.6887964311630005]
+ * Inf-norm of residuals: 0.000000
+ * Iterations: 5
+ * Convergence: true
+   * |x - x'| &lt; 1.0e-08: true
+   * |f(x)| &lt; 0.0e+00: false
+ * Function Calls (f): 6
+ * Jacobian Calls (df/dx): 6
+```
+
+---
+
+
+## Convergence speed
+
+Rootfinding algorithms will converge at different speeds in terms of the number of operations
+
+--
+
+A sequence of iterates `\(x^{(k)}\)` is said to converge to `\(x^*\)` at a rate of order `\(p\)` if there is a constant `\(C\)` such that
+
+$$
+\|x^{(k+1)}-x^{\*}\|\leq C \|x^{(k)} - x^{\*}\|^p
+$$
+
+for sufficiently large `\(k\)`
+
+---
+
+## Convergence speed
+
+$$
+\|x^{(k+1)}-x^{\*}\|\leq C \|x^{(k)} - x^{\*}\|^p
+$$
+
+- If `\(C &lt; 1\)` and `\(p = 1\)`: linear convergence
+- If `\(1 &lt; p &lt; 2\)`: superlinear convergence
+- If `\(p = 2\)`: quadratic convergence 
+
+The higher order the convergence rate, the faster it converges
+
+---
+
+## Convergence speed
+
+How fast do the methods we've seen converge?
+
+--
+
+- Bisection: linear rate with `\(C = 0.5\)`
+
+--
+
+- Function iteration: linear rate with `\(C = ||f'(x^*)||\)`
+
+--
+
+- Secant and Broyden: superlinear rate with `\(p \approx 1.62\)`
+
+--
+
+- Newton: `\(p = 2\)`
+
+---
+
+## Convergence speed
+
+Consider an example where `\(f(x) = x - \sqrt(x) = 0\)`
+
+This is how the 3 main approaches converge in terms of the `\(L^1-\)`norm for an initial guess `\(x^{(0)} = 0.5\)`
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/rootfinder_speed.png" height=300&gt;
+&lt;/div&gt;
+
+---
+
+## Choosing a solution method
+
+Convergence rates only account for the number of iterations of the method 
+
+The steps taken in a given iteration of each solution method may vary in computational cost because of differences in the number of arithmetic operations 
+
+Although an algorithm may take more iterations to solve, each iteration may be solved faster and the overall algorithm takes less time
+
+---
+
+## Choosing a solution method
+
+- Bisection method only requires a single function evaluation during each iteration
+- Function iteration only requires a single function evaluation during each iteration
+- Broyden's method requires both a function evaluation and matrix multiplication
+- Newton's method requires a function evaluation, a derivative evaluation, and solving a linear system
+
+--
+
+`\(\rightarrow\)` Bisection and function iteration are usually slow
+
+`\(\rightarrow\)` Broyden's method can be faster than Newton's method if derivatives are costly to compute
+
+---
+
+## Choosing a solution method
+
+Besides convergence rates and algorithm speed, you should also factor development time
+
+- Newton's method is fastest to converge
+  - If deriving and programing the Jacobian is relatively simple and not too costly to compute, this method is a good choice
+- If derivatives are complex, quasi-Newton methods are good candidates
+- Bisection and function iteration are generally dominated options but are easy to program/debug, so they have value as a quick proof-of-concept
+  - Bisection is often used in hybrid methods, such as Dekker's and Brent's. Hybrid methods select between bisection, secant, or other basic solution methods every iteration depending on a set of criteria
 
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
