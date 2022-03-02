@@ -1764,7 +1764,8 @@ Even this complex trade-equilibrium model can be reduced to a relatively simple 
 ---
 
 ## Example: solving the spatial GE in Julia
- 
+
+See the corresponding Jupyter notebook in course materials. 
 
 <!-- ## Complementarity problems -->
 
