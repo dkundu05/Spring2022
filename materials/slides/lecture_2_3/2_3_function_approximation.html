@@ -129,6 +129,12 @@ Problems like this arise frequently in dynamic optimization and strategic intera
 
 ---
 
+class: inverse, center, middle
+
+# Interpolation
+
+---
+
 ## Interpolation
 
 We want to approximate `\(f\)` with a tractable **approximant** `\(\hat{f}\)`
@@ -271,6 +277,14 @@ Basis functions are nonzero only over subsets if the approximation domain
 
 ---
 
+
+class: inverse, center, middle
+
+# Spectral methods
+
+
+---
+
 ## Spectral methods
 
 When using spectral methods we virtually always use polynomials. Why?
@@ -328,9 +342,9 @@ You've done a lot of programming so far! By now, you can
 - Solve the linear system to get basis coefficients for monomial basis polynomials
 - Then, use that to calculate `\(\hat{f}(x_0)\)`
 
-But I'll leave that as an exercise for you. Let's jump straight into a package that can do that for you: `Polynomials.jl`
-
 --
+
+But I'll leave that as an exercise for you. Let's jump straight into a package that can do that for you: `Polynomials.jl`
 
 Also, it's  easier if we can visualize functions, so we'll be plotting stuff. See [http://docs.juliaplots.org/latest/generated/gr/](http://docs.juliaplots.org/latest/generated/gr/) for examples using the `GR` backend
 
@@ -846,11 +860,498 @@ John P. Boyd&lt;sup&gt;1&lt;/sup&gt; summarizes decades of experience with funct
 - Unless you are sure another set of basis functions is better, use Chebyshev polynomials
 - Unless you are really, really sure another set of basis functions is better use Chebyshev polynomials
 
-.footnote[Prof. at U of Michigan and author of the book "Chebyshev and Fourier Spectral Methods"]
+.footnote[&lt;sup&gt;1&lt;/sup&gt;Professor at U of Michigan and author of the book "Chebyshev and Fourier Spectral Methods"]
 
 ---
 
 ## Grid point selection
+
+We construct the basis function approximant by evaluating the function on a predefined grid in the domain of `\(f\)`
+
+--
+
+If we have precisely `\(n\)` nodes, `\(x_i\)`, we then have
+`$$\sum_{j=1}^n c_j \phi_j(x_i) = f(x_i) \,\, \forall i=1,2,...,n$$`
+---
+
+## Grid point selection
+
+We can write this problem more compactly as
+`$$\Phi c = y \tag{interpolation equation}$$`
+where
+- `\(y\)` is the column vector of `\(f(x_i)\)`
+- `\(c\)` is the column vector of coefficients `\(c_j\)`
+- `\(\Phi\)` is an `\(n\times n\)` matrix of the `\(n\)` basis functions evaluated at the `\(n\)` points
+
+--
+
+If we recover a set of values at our interpolation nodes, 
+we can then simply invert `\(\Phi\)` and right multiply it by `\(y\)` to recover our coefficients ($c = \Phi^{-1}y$) 
+
+--
+
+**But how do we select our set of nodes `\(x_i\)`?**
+
+---
+
+## Chebyshev strikes again
+
+A good selection of points are called *Chebyshev nodes*
+
+--
+
+These are simply the roots of the Chebyshev polynomials above on the domain `\([-1,1]\)`
+
+--
+
+They are given by
+`$$x_k = cos\left(\frac{2k-1}{2n}\pi\right),\,\, k = 1,...,n$$`
+for some Chebyshev polynomial of degree `\(n\)`
+
+---
+
+## Chebyshev strikes again
+
+`$$x_k = cos\left(\frac{2k-1}{2n}\pi\right),\,\, k = 1,...,n$$`
+
+Mathematically, these also help reduce error in our approximation
+
+--
+
+We can gain intuition by looking at a graph of where Chebyshev nodes are located
+
+---
+
+## Chebyshev node function
+
+
+```julia
+cheb_nodes(n) = cos.(pi * (2*(1:n) .- 1)./(2n))
+```
+
+```
+## cheb_nodes (generic function with 1 method)
+```
+
+---
+
+## Chebyshev node locations
+
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-23-J1.png" width="800" /&gt;
+
+---
+
+## Chebyshev node locations
+
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-24-J1.png" width="800" /&gt;
+
+---
+
+## Chebyshev node locations
+
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-25-J1.png" width="800" /&gt;
+
+---
+
+## Chebyshev node locations
+
+The nodes are heavily focused near the end points, why is that?
+
+--
+
+Imagine areas of our approximant near the center of our domain but not at a node
+
+--
+
+These areas benefit from having multiple nodes on both the left and right
+
+---
+
+## Chebyshev node locations
+
+This provides more information for these off-node areas and allows them to be better approximated
+because we know whats happening nearby in several different directions
+
+--
+
+If we moved to an area closer to the edge of the domain, there may be only one node
+to the left or right of it providing information on what the value of our approximant should be
+
+--
+
+Therefore, it's best to put more nodes in these areas to compensate for this informational deficit
+and get good approximation quality near the edges of our domain
+
+---
+
+## Multi-dimensional approximation
+
+Thus far we have displayed the Chebyshev basis in only one dimension
+
+--
+
+We approximate functions of some arbitrary dimension `\(N\)` by taking the
+tensor product of vectors of the one-dimensional Chebyshev polynomials
+
+--
+
+If we wanted to approximate a two dimensional function with a degree 3 polynomial, implying 3 grid points for each dimension, we could do the following:
+
+1) Construct a vector of polynomials `\([\phi_{1,1}, \, \phi_{1,2}, \, \phi_{1,3}]\)` for dimension 1
+
+--
+
+2) Construct a vector of polynomials `\([\phi_{2,1}, \, \phi_{2,2}, \, \phi_{2,3}]\)` for dimension 2
+
+---
+
+## Multi-dimensional approximation
+
+3) Form the 2D grid with a tensor product. This is just the product of every possibly polynomial pair which results in
+
+`$$[\phi_{1,1}\phi_{2,1} ,\, \phi_{1,1}\phi_{2,2}, \, \phi_{1,1}\phi_{2,3}, \\ \phi_{1,2}\phi_{2,1}, \, \phi_{1,2}\phi_{2,2}, \, \phi_{1,2}\phi_{2,3}, \\ \phi_{1,3}\phi_{2,1}, \, \phi_{1,3}\phi_{2,2}, \, \phi_{1,3}\phi_{2,3}]$$`
+--
+
+- For example, if we have a monomial basis of degree 2 along both dimensions, our terms for `\(\hat{f}(x,y)\)` would be
+
+$$1, x, x^2, y, xy, x^2y, y^2, xy^2, x^2y^2 $$
+
+--
+
+4) Solve for the 9 coefficients on these two dimensional polynomials
+
+---
+
+## Multi-dimensional approximation
+
+Note that The computational complexity here grows exponentially: `\(\text{total # points} = (\text{points per  state})^{\text{# states}}\)`
+
+--
+
+Exponential complexity is costly, often called the **Curse of dimensionality**
+- There are a methods to mitigate this problem using, for example, sparse and adaptative grids&lt;sup&gt;2&lt;/sup&gt;
+
+
+.footnote[&lt;sup&gt;2&lt;/sup&gt;See [https://robertdkirkby.github.io/IntroToChebyshevSmolyak.html](https://robertdkirkby.github.io/IntroToChebyshevSmolyak.html) for an example with Smolyak sparse grids]
+
+---
+
+## Multi-dimensional approximation in Julia
+ 
+Two packages that can do multi-dimensional Chebyshev are `CompEcon` and `ApproxFun`
+
+- `CompEcon` is a package that replicates in Julia (as closes as possible) the functions from Miranda and Fackler's package for Matlab
+
+- `ApproxFun` is a powerful package targeting functional equations. It requires a bit of effort to get used to its syntax but once you get it, you can use for interpolation, function transforms, differential equations, and more
+
+---
+
+
+class: inverse, center, middle
+
+# Finite element methods
+
+
+---
+
+## Finite element methods
+
+An alternative to pseudo-spectral methods is the class of **finite element methods**
+
+--
+
+Finite element methods use basis functions that are non-zero over *subintervals* of the domain of our grid
+
+- For example, we can use **splines** (piecewise polynomials) over segments of our domains
+- These piecewuse polynomials are spliced together at pre-specified breakpoints, which are called **knots**
+
+---
+
+## Finite element methods
+
+The higher the order the polynomial we use, the higher the order of derivatives that we can preserve continuity at the knots
+
+--
+
+- For example, a linear spline yields an approximant that is continuous,
+but its first derivatives are discontinuous step functions unless the underlying value function happened to be precisely linear
+
+--
+
+- If we have a quadratic spline, we can also preserve the first derivative's continuity at the knots,
+but the second derivative will be a discontinuous step function
+
+---
+
+## Finite element methods
+
+As we increase the order of the spline polynomial, we have increasing numbers of coefficients we need to determine
+
+--
+
+To determine these additional coefficients using the same number of points, we require additional conditions that must be satisfied
+- These conditions ensure continuity of higher order derivatives at the knots as the degree of the spline grows
+
+---
+
+## Finite element methods
+
+
+With linear splines, each segment of our value function approximant is defined by a linear function
+
+--
+
+For each of these linear components, we need to solve for 1 coefficient and 1 intercept term
+
+--
+
+Each end of a linear segment must equal the function value at the knots
+
+---
+
+## Finite element methods
+
+We have two conditions and two unknowns for each segment: this is a simple set of linear equations that we can solve
+
+--
+
+In numerical models we typically don't use linear splines because we often care about the quality
+of approximation of higher order derivatives `\(\rightarrow\)` cubic splines are more common
+
+---
+
+## Cubic splines
+
+Suppose we wish to approximate using a cubic spline on `\(N+1\)` knots
+
+--
+
+We need `\(N\)` cubic polynomials `\(\Rightarrow 4N\)` coefficients to determine
+
+--
+
+1) We make the approximant equal to the function's value ( `\(\hat{f}(x_i)=y_i\)`) all of the nodes `\(\rightarrow N+1\)` equations 
+
+--
+
+2) We make the approximant continuous at all interior knots `\(\rightarrow N-1\)` equations 
+- This means that the value of the left cubic polynomial equals the value of the right cubic polynomial at each interior knot
+
+
+---
+
+## Cubic splines
+
+
+3) We make the first and second derivatives continuous at all interior knots `\(\rightarrow 2(N-1)\)` equations
+- This means that the value of the derivatives of the left cubic polynomial equals the value of the derivatives of the right cubic polynomial at each interior knot
+
+
+--
+
+Conditions 1--3 combined give us a total of `\(4N-2\)` equations for `\(4N\)` coefficients. We need two more conditions to solve the problem
+
+--
+
+Common solutions are 
+- Set the second derivative at the end points to be zero
+- Set approximant's first or second derivative to match that of the function at the end points
+
+
+---
+
+## Splines can potentially handle lots of curvature
+
+If the derivative is of interest for optimization (or to recover some variable of economic meaning),
+then we may need to have these derivatives preserved well at the knots
+
+--
+
+One large benefit of splines is that they can handle kinks or areas of high curvature. **How?**
+
+--
+
+By having the modeler place many knots in a concentrated region
+
+---
+
+## Splines can potentially handle lots of curvature
+
+If the knots are stacked on top of one another, this actually allows for a *kink* to be explicitly represented in the value function approximant, but the economist must know precisely where the kink is
+
+
+---
+
+## Splines in Julia
+
+There are a few good packages for splines in Julia: `Interpolations`, `GridInterpolations`, `Dierckx`
+
+We'll see a simple example with `Interpolations` to interpolate `sin(x)` again
+
+--
+
+
+```julia
+using Interpolations;
+f(x) = sin(x);
+num_knots = 5;
+# Assemble a grid for knots (x) and calculate y for each knot
+xs = range(0, 2pi, length = num_knots);
+ys = f.(xs)
+```
+
+```
+## 5-element Vector{Float64}:
+##   0.0
+##   1.0
+##   1.2246467991473532e-16
+##  -1.0
+##  -2.4492935982947064e-16
+```
+
+
+---
+
+## Splines in Julia
+
+We start with linear interpolation using the `LinearInterpolation(x, y)` method
+
+
+```julia
+ys_linear_spline = Interpolations.LinearInterpolation(xs, ys)
+```
+
+```
+## 5-element extrapolate(scale(interpolate(::Vector{Float64}, BSpline(Linear())), (0.0:1.5707963267948966:6.283185307179586,)), Throw()) with element type Float64:
+##   0.0
+##   1.0
+##   1.2246467991473532e-16
+##  -1.0
+##  -2.4492935982947064e-16
+```
+
+--
+
+This returns a composite object with all the information about the interpolation. We want to make it into a function so we can evaluate it anywhere in the domain
+
+```julia
+f_linear_spline(x) = ys_linear_spline(x)
+```
+
+```
+## f_linear_spline (generic function with 1 method)
+```
+
+---
+
+## Splines in Julia
+
+Now, we follow similar steps using `CubicInterpolation(x,y)`
+
+
+```julia
+ys_cubic_spline = Interpolations.CubicSplineInterpolation(xs, ys)
+```
+
+```
+## 5-element extrapolate(scale(interpolate(OffsetArray(::Vector{Float64}, 0:6), BSpline(Cubic(Line(OnGrid())))), (0.0:1.5707963267948966:6.283185307179586,)), Throw()) with element type Float64:
+##  -5.551115123125783e-17
+##   1.0
+##   1.6653345369377348e-16
+##  -1.0
+##  -1.6653345369377348e-16
+```
+
+```julia
+f_cubic_spline(x) = ys_cubic_spline(x)
+```
+
+```
+## f_cubic_spline (generic function with 1 method)
+```
+
+
+---
+
+## Splines in Julia
+
+Let's plot the results
+
+
+```julia
+Plots.plot(f, 0, 2pi, line = 4, grid = false, alpha = 0.7, size = (400, 250), label="Sin(x)")
+```
+
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-30-J1.png" width="533" /&gt;
+
+
+---
+
+## Splines in Julia
+
+
+```julia
+Plots.plot!(xs, f_linear_spline, color = :green, linewidth = 4.0, linestyle = :dashdot, label="Linear spline")
+```
+
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-31-J1.png" width="533" /&gt;
+
+---
+
+## Splines in Julia
+
+
+```julia
+Plots.plot!(f_cubic_spline, 0, 2pi, color = :red, linewidth = 4.0, linestyle = :dash, label="Cubic spline")
+```
+
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-32-J1.png" width="533" /&gt;
+
+
+---
+
+class: inverse, center, middle
+
+# Functional equations
+
+
+---
+
+## Functional equations
+
+In a classic formulation of functional equations, we look for a function `\(f\)` such that
+
+$$
+g\left(x, f(x) \right) = 0, \; \forall x \in [a, b]
+$$
+
+--
+
+Examples 
+
+- Differential equations
+   - `\(g(x, f(x)) \equiv f^\prime(x) + f(x) + 2 = 0\)`
+--
+
+- Bellman equations
+  - `\(g(x, V(x)) \equiv V(x) - \left\{\max_z u(x) + \beta V(\phi(x)) \right\} = 0\)`
+--
+
+- Monopolist supply `\(S(p)\)` with marginal cost `\(MC\)` and facing demand `\(D(p)\)` 
+  - `\(g(p, S(p)) \equiv p + \frac{S(p)}{D^\prime(p)} - MC(S(p)) = 0\)`
+
+
+---
+
+## Numerically solving functional equations
+
+Problems with functional equations are typically quite hard to solve and only admit closed-form solutions in special cases. 
+
+We can use numerical function approximation tools to make the problem tractable
+
+--
+
+
 
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
