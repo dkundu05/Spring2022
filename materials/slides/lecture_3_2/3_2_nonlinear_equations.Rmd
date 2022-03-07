@@ -1684,6 +1684,26 @@ In addition, it accepts argument `reformulation`, which can be `smooth` (default
 ```{julia}
 NLsolve.mcpsolve(f!, a, b, [1.0; 1.0], method=:newton, reformulation=:minmax, autodiff=:forward)
 ```
+---
+
+## Solving CPs in Julia
+
+**IMPORTANT NOTE**. Miranda and Fackler's textbook (and Matlab package) flip the sign convention for MCP problems. That's because they are formulating it with an economic context in mind, where these problems arise from constrained optimization.
+
+--
+
+The conventional setup is (note the flipped inequalities)
+
+$$
+\begin{align*}
+  x_i > a_i \Rightarrow f_i(x) \leq 0 \\
+  x_i < b_i \Rightarrow f_i(x) \geq 0
+\end{align*}
+$$
+--
+
+**Solution. If you are using standard MCP solvers (like mcpsolve), flip the sign of your $f$ function**
+- For more details, see Miranda and Fackler's Bibliographic Notes after Chapter 3
 
 ---
 
