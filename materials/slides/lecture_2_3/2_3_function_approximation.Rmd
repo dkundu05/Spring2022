@@ -1407,13 +1407,13 @@ We can use numerical function approximation tools to make the problem tractable!
 
 --
 
-**Key idea**. *Instead looking $f$ in an infinite-dimensional function space, we look for its approximant $\hat{f}$ in a finite-dimensional space*
+**Key idea**. *Instead of looking for $f$ in an infinite-dimensional function space, we look for its approximant $\hat{f}$ in a finite-dimensional space*
 
 ---
 
 ## Numerically solving functional equations
 
-Once again, we use approximats with a linear combination of basis functions
+Once again, we use approximants with a linear combination of basis functions
 
 $$
 f(x) \approx \hat{f} = \sum^{n}_{j=1} \phi_j(x) c_j = \phi(x)c
@@ -1425,7 +1425,7 @@ So the conditions on the original functional equation becomes
 $$
 g(x, \phi(x)c) \approx 0, \; \forall x \in [a, b]
 $$
-- $g(x, \phi(x)c)$ can be regarded as *residual*, which we want to make as close to zero as possible for a good approximation
+- $g(x, \phi(x)c)$ can be regarded as a *residual*, which we want to make as close to zero as possible for a good approximation
 
 ---
 
