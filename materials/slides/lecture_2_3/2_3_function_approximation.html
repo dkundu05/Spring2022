@@ -779,68 +779,170 @@ plot!(f_hat_10, 0, 8, color = :purple, linewidth = 4.0, linestyle = :dot, label 
 
 &lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-21-J1.png" width="533" /&gt;
 
+---
+
+## Chebyshev interpolation in Julia
+
+While `Polynomials` is has a nice unified approach to handle polynomials in general, it requires additional work to use Chebyshev polynomials (e.g., we had to transform `x` to use a different domain)
+
+--
+
+Instead, we can use specific packages for Chebyshev polynomials that will do that for us, such as `ChebyshevApprox.jl`
 
 ---
 
-## Two important theorems
+## Chebyshev interpolation in Julia
 
-There are two important theorems to know about Chebyshev polynomials
+If we have the basis coefficients, we can build a Chebyshev polynomial of order 5 with a custom domain `\([0, 10]\)`
+
+
+```julia
+using ChebyshevApprox;
+n = 5;
+coefs = [0.1, 0.2, 0.0, 0.1, -0.1];
+# Note that this package uses domain in the reverse order
+domain = [10.0, 0.0]; 
+my_cheb_poly = ChebPoly(coefs, n, domain)
+```
+
+```
+## ChebPoly{Float64, Int64, 1}([0.1, 0.2, 0.0, 0.1, -0.1], 5, [10.0, 0.0])
+```
 
 --
 
-**Chebyshev interpolation theorem:** *If `\(f(x) \in \mathbb{C}[a,b]\)`, if `\(\{\phi_i(x), i=0,...\}\)` is a system of polynomials (where `\(\phi_i(x)\)` is of exact degree i) orthogonal with respect to `\(w(x)\)` on `\([a,b]\)` and if `\(p_j = \sum_{i=0}^j \theta_i \phi_i(x)\)` interpolates `\(f(x)\)` in the zeros of `\(\phi_{n+1}(x)\)`, then:
-`$$\lim_{j\rightarrow\infty} \left(|| f-p_j||_2 \right)^2 = \lim_{j\rightarrow\infty}\int_a^b w(x) \left(f(x) - p_j \right)^2 dx = 0$$`*
+Then, we can evaluate it, say, at `x=3.0`  like this (this function is a bit dumb and `x` needs to be passed as the single element of a vector)
 
---
 
-What does this say?
+```julia
+chebyshev_evaluate(my_cheb_poly, [3.0])
+```
+
+```
+## 0.12191999999999999
+```
+
 
 ---
 
-## Two important theorems
+## Chebyshev interpolation in Julia
 
-If we have an approximation set of basis functions that are exact at the roots of the `\(n^{th}\)` order polynomials,
-then as `\(n\)` goes to infinity the approximation error becomes arbitrarily small and converges at a quadratic rate
+If we have a set of nodes `\(x_i\)` and values `\(y_i\)`, we can fit the polynomial and get the basis coefficients
 
---
 
-This holds for any type of polynomial, but if they are Chebyshev then convergence is uniform
+```julia
+f(x) = log(1 + x^2)/(1 + x);
+xs = collect(range(0.0, 10.0, length = n));
+ys = f.(xs);
+coefs = chebyshev_weights(ys, xs, n, domain)
+```
 
---
-
-Unfortunately we can't store an infinite number of polynomials in our computer, we would like to know how big our error is after truncating our sequence of polynomials
-
----
-
-## Two important theorems
-
-**Chebyshev truncation theorem:** The error in approximating `\(f\)` is bounded by the sum of all the neglected coefficients
-
---
-
-Since Chebyshev polynomials satisfy Stone-Weierstrauss, an infinite sequence of them can perfectly approximate any continuous function
-
---
-
-Since Chebyshev polynomials are bounded between `\([-1,1]\)`, the sum of the omitted terms is bounded by the sum of the magnitude of the coefficients
-
---
-
-So the error in the approximation is as well!
+```
+## 6-element Vector{Float64}:
+##   0.40094817558035983
+##   0.14985607190023034
+##  -0.18415539081517832
+##   0.12734721809116162
+##   0.12613951756782
+##   0.14985607190023034
+```
 
 ---
 
-## Two important theorems
+## Chebyshev interpolation in Julia
 
-We often also have that Chebyshev approximations geometrically converge which give us the following convenient property:
-`$$|f(x) - f^j(x|C)| \sim O(c_j)$$`
-The truncation error by stopping at polynomial `\(j\)` is of the same order as the magnitude of the coefficient `\(\c_j\)` on the last polynomial
+We can then use the fitted `coefs` to create a `ChebPoly` as before. Or we can evaluate a Chebyshev polynomial at `x` directly without having to define it first
 
---
 
-Thus in many situations we can simply check the size of the last polynomial to gauge how accurate our approximation is
+```julia
+yhat = chebyshev_evaluate(coefs, [1.0], n, domain)
+```
+
+```
+## 0.31738967459998624
+```
 
 ---
+
+## Chebyshev interpolation in Julia
+
+It might be useful to use a wrapper function
+
+
+```julia
+function f_hat_cheb(x)
+    chebyshev_evaluate(coefs, [x], n, domain)
+end;
+f_hat_cheb(1.0)
+```
+
+```
+## 0.31738967459998624
+```
+
+You can find more about additional options and methods for derivatives in the [package documentation](https://github.com/RJDennis/ChebyshevApprox.jl)
+
+---
+
+&lt;!-- ## Two important theorems --&gt;
+
+&lt;!-- There are two important theorems to know about Chebyshev polynomials --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- **Chebyshev interpolation theorem:** *If `\(f(x) \in \mathbb{C}[a,b]\)`, if `\(\{\phi_i(x), i=0,...\}\)` is a system of polynomials (where `\(\phi_i(x)\)` is of exact degree i) orthogonal with respect to `\(w(x)\)` on `\([a,b]\)` and if `\(p_j = \sum_{i=0}^j \theta_i \phi_i(x)\)` interpolates `\(f(x)\)` in the zeros of `\(\phi_{n+1}(x)\)`, then: --&gt;
+&lt;!-- `$$\lim_{j\rightarrow\infty} \left(|| f-p_j||_2 \right)^2 = \lim_{j\rightarrow\infty}\int_a^b w(x) \left(f(x) - p_j \right)^2 dx = 0$$`* --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- What does this say? --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Two important theorems --&gt;
+
+&lt;!-- If we have an approximation set of basis functions that are exact at the roots of the `\(n^{th}\)` order polynomials, --&gt;
+&lt;!-- then as `\(n\)` goes to infinity the approximation error becomes arbitrarily small and converges at a quadratic rate --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- This holds for any type of polynomial, but if they are Chebyshev then convergence is uniform --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Unfortunately we can't store an infinite number of polynomials in our computer, we would like to know how big our error is after truncating our sequence of polynomials --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Two important theorems --&gt;
+
+&lt;!-- **Chebyshev truncation theorem:** The error in approximating `\(f\)` is bounded by the sum of all the neglected coefficients --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Since Chebyshev polynomials satisfy Stone-Weierstrauss, an infinite sequence of them can perfectly approximate any continuous function --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Since Chebyshev polynomials are bounded between `\([-1,1]\)`, the sum of the omitted terms is bounded by the sum of the magnitude of the coefficients --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- So the error in the approximation is as well! --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- ## Two important theorems --&gt;
+
+&lt;!-- We often also have that Chebyshev approximations geometrically converge which give us the following convenient property: --&gt;
+&lt;!-- `$$|f(x) - f^j(x|C)| \sim O(c_j)$$` --&gt;
+&lt;!-- The truncation error by stopping at polynomial `\(j\)` is of the same order as the magnitude of the coefficient `\(\c_j\)` on the last polynomial --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- Thus in many situations we can simply check the size of the last polynomial to gauge how accurate our approximation is --&gt;
+
+&lt;!-- --- --&gt;
 
 ## Boyd's moral principle
 
@@ -858,7 +960,7 @@ John P. Boyd&lt;sup&gt;1&lt;/sup&gt; summarizes decades of experience with funct
 
 - When in doubt, use Chebyshev polynomials unless the solution is spatially periodic, in which case an ordinary fourier series is better
 - Unless you are sure another set of basis functions is better, use Chebyshev polynomials
-- Unless you are really, really sure another set of basis functions is better use Chebyshev polynomials
+- Unless you are really, really sure another set of basis functions is better, use Chebyshev polynomials
 
 .footnote[&lt;sup&gt;1&lt;/sup&gt;Professor at U of Michigan and author of the book "Chebyshev and Fourier Spectral Methods"]
 
@@ -877,7 +979,7 @@ If we have precisely `\(n\)` nodes, `\(x_i\)`, we then have
 ## Grid point selection
 
 We can write this problem more compactly as
-`$$\Phi c = y \tag{interpolation equation}$$`
+`$$\Phi c = y$$`
 where
 - `\(y\)` is the column vector of `\(f(x_i)\)`
 - `\(c\)` is the column vector of coefficients `\(c_j\)`
@@ -924,6 +1026,8 @@ We can gain intuition by looking at a graph of where Chebyshev nodes are located
 
 ## Chebyshev node function
 
+The location of the nodes in the default domain `\([-1, 1]\)` is easy enough, so we can calculate it ourselves
+
 
 ```julia
 cheb_nodes(n) = cos.(pi * (2*(1:n) .- 1)./(2n))
@@ -937,21 +1041,60 @@ cheb_nodes(n) = cos.(pi * (2*(1:n) .- 1)./(2n))
 
 ## Chebyshev node locations
 
-&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-23-J1.png" width="800" /&gt;
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-28-J1.png" width="800" /&gt;
 
 ---
 
 ## Chebyshev node locations
 
-&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-24-J1.png" width="800" /&gt;
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-29-J1.png" width="800" /&gt;
 
 ---
 
 ## Chebyshev node locations
 
-&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-25-J1.png" width="800" /&gt;
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-30-J1.png" width="800" /&gt;
 
 ---
+
+## Chebyshev node locations
+
+We can also rely on `ChebyshevApprox` to calculate the nodes for us using a custom domain
+
+
+```julia
+domain = [10.0, 0.0];
+chebyshev_nodes(3, domain)
+```
+
+```
+## 3-element Vector{Float64}:
+##  0.6698729810778064
+##  5.0
+##  9.330127018922195
+```
+
+```julia
+chebyshev_nodes(5, domain)
+```
+
+```
+## 5-element Vector{Float64}:
+##  0.24471741852423268
+##  2.061073738537634
+##  5.0
+##  7.938926261462366
+##  9.755282581475768
+```
+
+---
+
+## Chebyshev node locations
+
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-32-J1.png" width="800" /&gt;
+
+---
+
 
 ## Chebyshev node locations
 
@@ -1038,11 +1181,13 @@ Exponential complexity is costly, often called the **Curse of dimensionality**
 
 ## Multi-dimensional approximation in Julia
  
-Two packages that can do multi-dimensional Chebyshev are `CompEcon` and `ApproxFun`
+Three packages that can do multi-dimensional Chebyshev are `ChebyshevApprox`, `CompEcon` and `ApproxFun`
+
+- `ChebyshevApprox` also supports higher-dimensional polynomials (you will need to define `order` and `domain` in vectors/matrices)
 
 - `CompEcon` is a package that replicates in Julia (as closes as possible) the functions from Miranda and Fackler's package for Matlab
 
-- `ApproxFun` is a powerful package targeting functional equations. It requires a bit of effort to get used to its syntax but once you get it, you can use for interpolation, function transforms, differential equations, and more
+- `ApproxFun` is a powerful package targeting functional equations. It requires a bit of effort to get used to its syntax. But once you get it, you can use for interpolation, function transforms, differential equations, and more
 
 ---
 
@@ -1168,17 +1313,13 @@ then we may need to have these derivatives preserved well at the knots
 --
 
 One large benefit of splines is that they can handle kinks or areas of high curvature. **How?**
+--
+
+  - By having the modeler place many knots in a concentrated region
 
 --
 
-By having the modeler place many knots in a concentrated region
-
----
-
-## Splines can potentially handle lots of curvature
-
 If the knots are stacked on top of one another, this actually allows for a *kink* to be explicitly represented in the value function approximant, but the economist must know precisely where the kink is
-
 
 ---
 
@@ -1282,7 +1423,7 @@ Let's plot the results
 Plots.plot(f, 0, 2pi, line = 4, grid = false, alpha = 0.7, size = (400, 250), label="Sin(x)")
 ```
 
-&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-30-J1.png" width="533" /&gt;
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-37-J1.png" width="533" /&gt;
 
 
 ---
@@ -1294,7 +1435,7 @@ Plots.plot(f, 0, 2pi, line = 4, grid = false, alpha = 0.7, size = (400, 250), la
 Plots.plot!(xs, f_linear_spline, color = :green, linewidth = 4.0, linestyle = :dashdot, label="Linear spline")
 ```
 
-&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-31-J1.png" width="533" /&gt;
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-38-J1.png" width="533" /&gt;
 
 ---
 
@@ -1305,7 +1446,26 @@ Plots.plot!(xs, f_linear_spline, color = :green, linewidth = 4.0, linestyle = :d
 Plots.plot!(f_cubic_spline, 0, 2pi, color = :red, linewidth = 4.0, linestyle = :dash, label="Cubic spline")
 ```
 
-&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-32-J1.png" width="533" /&gt;
+&lt;img src="2_3_function_approximation_files/figure-html/unnamed-chunk-39-J1.png" width="533" /&gt;
+
+
+---
+
+## Choosing an interpolation method
+
+A few rules of thumb from Miranda and Fackler
+
+1. Chebychev node polynomial interpolation dominates evenly spaced node polynomial
+interpolation.
+--
+
+2. Cubic spline interpolation dominates linear spline interpolation, except where
+the approximant exhibits a profound discontinuity.
+
+--
+3. Chebychev polynomial interpolation dominates cubic spline interpolation if the
+approximant is smooth; otherwise, cubic or even linear spline interpolation may
+be preferred.
 
 
 ---
@@ -1345,13 +1505,53 @@ Examples
 
 ## Numerically solving functional equations
 
-Problems with functional equations are typically quite hard to solve and only admit closed-form solutions in special cases. 
+Problems with functional equations are typically quite hard to solve and only admit closed-form solutions in special cases
 
-We can use numerical function approximation tools to make the problem tractable
+We can use numerical function approximation tools to make the problem tractable!
 
 --
 
+**Key idea**. *Instead looking `\(f\)` in an infinite-dimensional function space, we look for its approximant `\(\hat{f}\)` in a finite-dimensional space*
 
+---
+
+## Numerically solving functional equations
+
+Once again, we use approximats with a linear combination of basis functions
+
+$$
+f(x) \approx \hat{f} = \sum^{n}_{j=1} \phi_j(x) c_j = \phi(x)c
+$$
+--
+
+So the conditions on the original functional equation becomes
+
+$$
+g(x, \phi(x)c) \approx 0, \; \forall x \in [a, b]
+$$
+- `\(g(x, \phi(x)c)\)` can be regarded as *residual*, which we want to make as close to zero as possible for a good approximation
+
+---
+
+## Collocation method
+
+The general approach to numerically solve problems of this form is called the **Collocation method**
+
+--
+
+Instead of solving an infinite-dimensional problem, we look for a *finite vector of basis coefficients* `\(c\)` such that the residual is `\(0\)` at `\(n\)` nodes
+
+$$
+g(x_i, \phi(x_i)c) = 0, \; \forall i = 1, 2, \dots, n
+$$
+
+--
+
+**This is a n-dimensional (nonlinear) rootfinding problem!** We can use the methods from Unit 3 to solve it
+
+---
+
+## Cournot oligopoly example
 
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
