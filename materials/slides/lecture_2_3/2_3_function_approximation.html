@@ -22,6 +22,13 @@ exclude: true
 
 ```r
 if (!require("pacman")) install.packages("pacman")
+```
+
+```
+## Loading required package: pacman
+```
+
+```r
 pacman::p_load(
   xaringanthemer, JuliaCall
 )
@@ -680,7 +687,7 @@ f_hat = Polynomials.fit(ChebyshevT, xs, ys)
 ```
 
 ```
-## ChebyshevT(1.1102230246251565e-16⋅T_0(x) + 0.88009713587708⋅T_1(x) + 9.098609034624048e-17⋅T_2(x) - 0.039128003846193624⋅T_3(x) - 7.118575049196504e-17⋅T_4(x) + 0.0005018527770100587⋅T_5(x) - 9.098609034624048e-17⋅T_6(x))
+## ChebyshevT(1.1102230246251565e-16⋅T_0(x) + 0.88009713587708⋅T_1(x) + 9.344636880698897e-17⋅T_2(x) - 0.03912800384619364⋅T_3(x) - 7.508756288637781e-17⋅T_4(x) + 0.0005018527770100609⋅T_5(x) - 9.344636880698897e-17⋅T_6(x))
 ```
 
 ---
@@ -988,7 +995,7 @@ where
 --
 
 If we recover a set of values at our interpolation nodes, 
-we can then simply invert `\(\Phi\)` and right multiply it by `\(y\)` to recover our coefficients ($c = \Phi^{-1}y$) 
+we can then simply invert `\(\Phi\)` and right multiply it by `\(y\)` to recover our coefficients ( `\(c = \Phi^{-1}y\)` ) 
 
 --
 
@@ -1551,8 +1558,20 @@ $$
 
 ---
 
+## Collocation method
+
+How do we assess the quality of our approximation?
+
+--
+
+The common approach is to evaluate the residual `\(g(x, \phi(x)c)\)` over a fine grid (not Chebyshev nodes) and look for the highest absolute value
+- If the largest residual is above some tolerance level we defined, we can repeat the process with more nodes and basis functions to improve accuracy
+
+---
+
 ## Cournot oligopoly example
 
+Please see the respective code notebook and slides on Brightspace
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

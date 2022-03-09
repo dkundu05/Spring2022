@@ -943,7 +943,7 @@ where
 --
 
 If we recover a set of values at our interpolation nodes, 
-we can then simply invert $\Phi$ and right multiply it by $y$ to recover our coefficients ($c = \Phi^{-1}y$) 
+we can then simply invert $\Phi$ and right multiply it by $y$ to recover our coefficients ( $c = \Phi^{-1}y$ ) 
 
 --
 
@@ -1447,5 +1447,17 @@ $$
 
 ---
 
+## Collocation method
+
+How do we assess the quality of our approximation?
+
+--
+
+The common approach is to evaluate the residual $g(x, \phi(x)c)$ over a fine grid (not Chebyshev nodes) and look for the highest absolute value
+- If the largest residual is above some tolerance level we defined, we can repeat the process with more nodes and basis functions to improve accuracy
+
+---
+
 ## Cournot oligopoly example
 
+Please see the respective code notebook and slides on Brightspace
