@@ -67,7 +67,7 @@ style_extra_css(css = extra_css)
 using Pkg
 Pkg.activate(".")
 Pkg.instantiate()
-#Pkg.add("Optim")
+Pkg.add("Optim")
 ```
 
 
@@ -222,10 +222,9 @@ But, once we find them, we can't be sure yet if these points indeed are local mi
 
 --
 
-- If $n = 1$, this means that $f^{\prime \prime}(x^*) \leq 0$, i.e., the function is locally convex
+- If $n = 1$, this means that $f^{\prime \prime}(x^*) \geq 0$, i.e., the function is locally convex
   - Positive semidefiniteness is the multidimensional analogous of convexity in 1D
   - A matrix $B$ is positive semidefinite if $p^\prime B p \geq 0$ for all $p$
-  
 --
   
 - For maximization problems, we check whether $\nabla^2 f(x^*)$ is negative semidefinite
@@ -237,7 +236,7 @@ But, once we find them, we can't be sure yet if these points indeed are local mi
 
 #### Theorem 3: Second-Order Sufficient Conditions
 
-> Suppose $\nabla^2 f$ is continuous in an open neighborhood of $x^*$ and that $\nabla f(x^*) = 0$ and $\nabla^2 f(x^*) = 0$ is positive definite. Then $x^*$ is a strict local minimizer of $f$
+> Suppose $\nabla^2 f$ is continuous in an open neighborhood of $x^*$ and that $\nabla f(x^*) = 0$ and $\nabla^2 f$ is positive definite. Then $x^*$ is a strict local minimizer of $f$
 
 --
 
