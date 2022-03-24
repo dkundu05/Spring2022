@@ -67,7 +67,7 @@ style_extra_css(css = extra_css)
 using Pkg
 Pkg.activate(".")
 Pkg.instantiate()
-Pkg.add("Optim")
+#Pkg.add("Optim")
 ```
 
 
@@ -570,7 +570,7 @@ Its global minimizer is $(x, y) = (a, a^2 )$
 
 ## Nelder-Mead in Julia
 
-Nelder-Mead is a pain to code efficiently (i.e. don't spend the time doing it yourself)
+Nelder-Mead is a pain to code efficiently: don't spend the time doing it yourself!
 
 For unconstrained optimization, Julia's most mature package is `Optim.jl`, which includes NM
 
@@ -597,11 +597,13 @@ soln = Optim.optimize(f, x0, NelderMead())
 
 ## Nelder-Mead in Julia
 
-We can check the solution using `Optim.minimizer`
+We can check the solution and the minimum value attained using
 
 ```{julia}
-Optim.minimizer(soln)
+soln.minimizer
+soln.minimum
 ```
+
 
 ---
 
@@ -619,10 +621,10 @@ Optim.trace(soln)
 
 ## Final comments on Nelder-Mead
 
-- Nelder-Mead is commonly used but slow and unreliable
+- Nelder-Mead is commonly used in optmization packages but it's slow and unreliable
   - It has no real useful convergence properties
 
-- Unless you're solving a problem with derivatives that are costly to calculate or approximate, avoid using Nelder-Mead
+- Only use Nelder-Mead if you're solving a problem with derivatives that are costly to calculate or approximate
 
 
 ---
@@ -655,23 +657,47 @@ $$\min_{\alpha > 0} f(x_k + \alpha p_k)$$
 
 --
 
-We are finding the distance to move, $\alpha$, in direction $p_k$ that minimizes our objective $f$
-
----
-
-## Line search algorithms
-
-Typically do not perform the full minimization problem since it is costly
-
-We only try a limited number of step lengths $\alpha$ before picking the best one and moving onto our next iterate $x_{k+1}$
+We are finding the distance to move ( $\alpha$) along direction $p_k$ that minimizes our objective $f$
 
 --
 
-**We still haven't answered, what direction $p_k$ do we decide to move in?**
+Typically, algorithms do not perform the full minimization problem since it is costly
+
+- We only try a limited number of step lengths and stop when an approximation criterion is met (ex: Armijo, Wolfe, or Goldstein conditions)
+
+---
+
+## Line search: step length selection
+
+Typical line search algorithms select the step length in two stages
+
+1. Bracketing: pick an interval with desirable step lengths
+2. Bisection or interpolation: find a "good" step length in this interval
+
+---
+
+## Line search: step length selection
+
+A widely-used method is the **Backtracking** procedure
+
+1. Choose $\bar{\alpha} > 0, \rho \in (0,1), c\in(0,1)$
+2. Set $\alpha \leftarrow \bar{\alpha}$
+3. Repeat until $f(x_k + \alpha p_k) \leq f(x_k) + c\alpha\nabla f_k^T p_k$
+  - $\alpha \leftarrow \rho \alpha$
+4. Terminate with $\alpha_k = \alpha$
+
+--
+
+- Step 3 checks the *Armijo condition*, which checks for a *sufficient decrease* for convergence
+
+.footnote[*Several other step lenght methods exist. See Nocedal & Wright Ch.3 and Miranda & Fackler Ch 4.4 for more examples.]
 
 ---
 
 ## Line search: direction choice
+
+
+**We still haven't answered, what direction $p_k$ do we decide to move in?**
 
 What's an obvious choice for $p_k$?
 
@@ -686,7 +712,7 @@ $-\nabla f_k$ is the direction that makes $f$ decrease most rapidly
 
 ---
 
-## Line search algorithms
+## Steepest descent method
 
 
 <div align="center">
@@ -695,7 +721,7 @@ $-\nabla f_k$ is the direction that makes $f$ decrease most rapidly
 
 ---
 
-## Line search: steepest descent
+## Steepest descent method
 
 We can verify this is the direction of steepest descent by referring to Taylor's theorem
 
@@ -710,7 +736,7 @@ The rate of change in $f$ along $p$ at $x_k$ $(\alpha = 0)$ is $p^T \, \nabla\,f
 
 ---
 
-## Line search: steepest descent
+## Steepest descent method
 
 The the unit vector of quickest descent solves
 $$\min_p p^T\,\nabla\,f_k \,\,\,\,\, \text{subject to:    }||p|| = 1$$
@@ -720,7 +746,7 @@ $$\min_p p^T\,\nabla\,f_k \,\,\,\,\, \text{subject to:    }||p|| = 1$$
 
 Re-express the objective as 
 
-$$\min_{\theta,p} ||p||\,||\nabla\,f_k||cos\,\theta$$
+$$\min_{\theta,||p||} ||p||\,||\nabla\,f_k||cos\,\theta$$
 
 where $\theta$ is the angle between $p$ and $\nabla\,f_k$
 
@@ -730,15 +756,15 @@ The minimum is attained when $cos\,\theta = -1$ and $p = -\frac{\nabla\,f_k}{||\
 
 ---
 
-## Line search: steepest descent
+## Steepest descent method
 
 The **steepest descent method** searches along this direction at every iteration $k$
 
-It may select the step length $\alpha_k$ in several different ways
+- It may select the step length $\alpha_k$ in several different ways
 
-A benefit of the algorithm is that we only require the gradient of the function, and no Hessian
+- A benefit of the algorithm is that we only require the gradient of the function, and no Hessian
 
-However it can be very slow
+- However it can be very slow
 
 ---
 
@@ -748,42 +774,365 @@ We can always use search directions other than the steepest descent
 
 --
 
-Any descent direction (i.e. one with angle strictly less than $90^\circ$ of $-\nabla\,f_k$) 
-is *guaranteed* to produce a decrease in $f$ as long as the step size is sufficiently small
-
-<div align="center">
+<div style="float:right">
   <img src="figures/downhill_direction.png" height=350>
 </div>
 
----
-
-## Line search: alternative directions
-
-We can actually verify this with Taylor's theorem
-
---
-
-$$f(x_k + \epsilon p_k) = f(x_k) + \epsilon\,p_k^T\,\nabla\,f_k + O(\epsilon^2)$$
-
---
-
-If $p_k$ is in a descending direction, $\theta_k$ will be of an angle such that $cos\,\theta_k < 0$
-
-This gives us
-
---
-
-$$p_k^T\,\nabla f_k = ||p_k||\,||\nabla\,f_k||cos\,\theta_k < 0$$
-
---
-
-Therefore $f(x_k + \epsilon p_k) < f(x_k)$ for positive but sufficiently small $\epsilon$
+Any descent direction (i.e. one with angle strictly less than $90^\circ$ of $-\nabla\,f_k$) 
+is *guaranteed* to produce a decrease in $f$ as long as the step size is sufficiently small
 
 --
 
 **But is $-\nabla\,f_k$ always the best search direction?**
 
+<!-- --- -->
+
+<!-- ## Line search: alternative directions -->
+
+<!-- We can actually verify this with Taylor's theorem -->
+
+<!-- -- -->
+
+<!-- $$f(x_k + \epsilon p_k) = f(x_k) + \epsilon\,p_k^T\,\nabla\,f_k + O(\epsilon^2)$$ -->
+
+<!-- -- -->
+
+<!-- If $p_k$ is in a descending direction, $\theta_k$ will be of an angle such that $cos\,\theta_k < 0$ -->
+
+<!-- This gives us -->
+
+<!-- -- -->
+
+<!-- $$p_k^T\,\nabla f_k = ||p_k||\,||\nabla\,f_k||cos\,\theta_k < 0$$ -->
+
+<!-- -- -->
+
+<!-- Therefore $f(x_k + \epsilon p_k) < f(x_k)$ for positive but sufficiently small $\epsilon$ -->
 
 ---
 
-## Newton-Raphson Method
+## Newton-Raphson method
+
+The most important search direction is not steepest descent but **Newton's direction**
+
+--
+
+This direction gives rise to the Newton-Raphson Method
+- This method is basically just using Newton's method to find the root of the gradient of the objective function
+
+---
+
+## Newton-Raphson method
+
+
+Newton's direction comes out of the second order Taylor series approximation to $f(x_k + p)$
+$$f(x_k + p) \approx f_k + p^T\,\nabla\,f_k + \frac{1}{2!}\,p^T\,\nabla^2f_k\,p$$
+
+--
+
+We find the Newton direction by selecting the vector $p$ that minimizes $f(x_k + p)$
+
+--
+
+This ends up being
+$$p^N_k = -[\nabla^2 f_k]^{-1}\nabla f_k$$
+---
+
+## Newton-Raphson method
+
+The algorithm is pretty much the same as in Newton's rootfinding method
+
+1. Start with an initial guess $x_0$
+2. Repeat until convergence
+  - $x_{k+1} \leftarrow x_{k} - \alpha_k [\nabla^2 f_k]^{-1}\nabla f_k$
+      - where $\alpha_k$ comes from a step length selection algorithm
+3. Terminate with $x^* = x_{k}$
+
+--
+
+- Most packages just use $\alpha=1$ (i.e., Newton's method step). But you can usually change this parameter is you have convergence issues
+
+---
+
+## Newton-Raphson method
+
+This approximation to the function we are trying to solve has error of $O(||p||^3)$,
+so if $p$ is small, the quadratic approximation is very accurate
+
+--
+
+**Drawbacks:** 
+- The Newton direction is only guaranteed to decrease the objective function if $\nabla^2 f_k$ is positive definite
+- It requires explicit computation of the Hessian, $\nabla^2 f(x)$
+  - But quasi-Newton solvers also exist
+
+---
+
+## Quasi-Newton methods
+
+Just like in rootfinding, there are several methods to avoid computing derivatives (Hessians, in this case)
+
+Instead of the true Hessian $\nabla^2 f(x)$, these methods use an approximation $B_k$ (to the inverse of the Hessian). Hence, they set direction
+
+$$d_k = -B_k \nabla f_k$$
+
+--
+
+The optimization method analogous to Broyden's that also uses the *secant condition* is the **BFGS method**
+- Named after its inventors, Broyden, Fletcher, Goldfarb, Shanno
+
+---
+
+## Linear search methods in Julia
+
+Once again, we will use `Optim.jl`. We'll see an example with an easy function, solving it using Steepest Descent, Newton-Raphson, and BFGS
+
+$$f(x_1, x_2) = ax_1^2 + bx_2^2 + cx_1 + dx_2 + ex_1 x_2$$
+
+We will use parameters $a=1, b=4, c=-2, d=-1, e=-3$
+
+```{julia}
+using Optim, Plots, LinearAlgebra;
+a = 1; b = 4; c = -2; d = -1; e = -3;
+f(x) = a*x[1]^2 + b*x[2]^2 + c*x[1] + d*x[2] + e*x[1]*x[2];
+```
+
+---
+
+## Linear search methods in Julia
+
+Let's take a look at our function with a contour plot
+
+```{julia, include=F}
+curve_levels = exp.(0:log(1.2):log(500)) .- 5; # Define manual, log-scale levels for a nicer look
+```
+
+```{julia, echo=FALSE}
+Plots.contour(-5.0:0.1:10.0, -5:0.1:10.0, (x,y)->f([x, y]), fill = true, levels = curve_levels, size = (400, 300))
+```
+
+
+---
+
+## Linear search methods in Julia
+
+Since we will use Newton-Raphson, we should define the gradient and the Hessian of our function
+```{julia}
+# Gradient
+function g!(G, x)
+    G[1] = 2a*x[1] + c + e*x[2]
+    G[2] = 2b*x[2] + d + e*x[1]
+end;
+
+# Hessian
+function h!(H, x)
+    H[1,1] = 2a
+    H[1,2] = e
+    H[2,1] = e
+    H[2,2] = 2b
+end;
+```
+
+
+---
+
+## Linear search methods in Julia
+
+Let's check if the Hessian satisfies it being positive semidefinite. One way is to check whether all eigenvalues are positive. In this case, $H$ is constant, so it's easy to check
+
+```{julia}
+H = zeros(2,2);
+h!(H, [0 0]);
+LinearAlgebra.eigen(H).values
+```
+
+
+---
+
+## Linear search methods in Julia
+
+Since the gradient is linear, it is also easy to calculate the minimizer analytically. The FOC is just a linear equation
+
+```{julia}
+analytic_x_star = [2a e; e 2b]\[-c ;-d]
+```
+
+---
+
+## Linear search methods in Julia
+
+Let's solve it with the Steepest (or Gradient) descent method
+
+```{julia}
+# Initial guess
+x0 = [0.2, 1.6]; 
+res_GD = Optim.optimize(f, g!, x0, GradientDescent(), Optim.Options(x_abstol=1e-3))
+```
+
+---
+
+## Linear search methods in Julia
+
+Let's solve it with the Steepest (or Gradient) descent method
+```{julia}
+res_GD.minimizer
+res_GD.minimum
+```
+
+
+---
+
+## Linear search methods in Julia
+
+<div align="center">
+ <image src="figures/Optim_GD.png">
+</div>
+
+---
+
+## Linear search methods in Julia
+
+We haven't really specified a line search method yet 
+
+In most cases, `Optim.jl` will use by default the *Hager-Zhang method*
+- This is based on Wolfe conditions
+
+--
+
+But we can specify other approaches. We need the `LineSearches` package to do that:
+
+```{julia}
+using LineSearches;
+```
+
+--
+
+Let's re-run the `GradientDescent` method using $\bar{\alpha}=1$ and the backtracking method
+
+---
+
+## Linear search methods in Julia
+
+```{julia}
+Optim.optimize(f, g!, x0,
+               GradientDescent(alphaguess = LineSearches.InitialStatic(alpha=1.0),
+                               linesearch = BackTracking()),
+               Optim.Options(x_abstol=1e-3))
+```
+
+---
+
+## Linear search methods in Julia
+
+<div align="center">
+ <image src="figures/Optim_GDBT.png">
+</div>
+
+---
+
+## Linear search methods in Julia
+
+Next, let's use the Newton-Raphson method with default (omitted) line search parameters
+- If you omit `g!` and `h!`, `Optim` will approximate them numerically for you. You can also specify options to use auto differentiation
+
+```{julia}
+Optim.optimize(f, g!, h!, x0, Newton())
+```
+
+---
+
+## Linear search methods in Julia
+
+<div align="center">
+ <image src="figures/Optim_NR.png">
+</div>
+
+---
+
+## Linear search methods in Julia
+
+Lastly, let's use the BFGS method
+
+```{julia}
+Optim.optimize(f, x0, BFGS())
+```
+
+---
+
+## Linear search methods in Julia
+
+<div align="center">
+ <image src="figures/Optim_BFGS.png">
+</div>
+
+---
+
+
+class: inverse, center, middle
+
+# Trust regions algorithms
+
+<!-- --- -->
+
+<!-- ## Trust region methods -->
+
+<!-- Trust region methods construct an approximating model, $m_k$ -->
+<!-- whose behavior near the current iterate $x_k$ is close to that of the actual function $f$ -->
+
+<!-- -- -->
+
+<!-- We then search for a minimizer of $m_k$ -->
+
+<!-- -- -->
+
+<!-- **Issue:** $m_k$ may not represent $f$ well when far away from the current iterate $x_k$ -->
+
+<!-- -- -->
+
+<!-- **Solution:** Restrict the search for a minimizer to be within some region of $x_k$, called a .hi-blue[trust region] -->
+
+<!-- --- -->
+
+<!-- ## Trust region methods -->
+
+<!-- Trust region problems can be formulated as -->
+<!-- $$\min_p m_k(x_k + p)$$ -->
+<!-- where -->
+<!-- - $x_k+p \in \Gamma$ -->
+<!-- - $\Gamma$ is a ball defined by $||p||_2 \leq \Delta$ -->
+<!-- - $\Delta$ is called the trust region radius -->
+
+<!-- --- -->
+
+<!-- ## Trust region Methods -->
+
+<!-- Typically the approximating model $m_k$ is a quadratic function (i.e. a second-order Taylor approximation) -->
+<!-- $$m_k(x_k + p) = f_k + p^T\,\nabla\,f_k + \frac{1}{2!}\,p^T\,B_k\,p$$ -->
+<!-- where $B_k$ is the Hessian or an approximation to the Hessian -->
+
+<!-- <div align="center"> -->
+<!--   <img src="figures/trust_region.png" height=300> -->
+<!-- </div> -->
+
+<!-- --- -->
+
+<!-- ## Line search vs trust region -->
+
+<!-- Whats the fundamental difference between line search and trust region? -->
+
+<!-- -- -->
+
+<!-- Line search first picks a direction then searches along that direction for the optimal step length -->
+
+<!-- Trust region first defines our step length via the trust region radius, then searches for the optimal direction -->
+
+<!-- --- -->
+
+<!-- ## Line search vs trust region -->
+
+<!-- There is a special case of the trust region where if we set $B_k$, the approximate Hessian, to zero, -->
+<!-- the solution to the problem is -->
+<!-- $$p_k = -\frac{\Delta_k \,\nabla \,f_k}{||\nabla\,f_k||}$$ -->
+
+<!-- This is just the steepest descent solution for the line search problem -->
+
