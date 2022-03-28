@@ -107,7 +107,7 @@ res_BFGS = Optim.optimize(f, x0,
 # Collect guesses
 guesses_BFGS = hcat(Optim.x_trace(res_BFGS)...)'
 
-#contour(1.0:0.01:3.0, y_grid, (x,y)->f([x, y]), fill = false, levels = curve_levels)
+# Plot solution
 plot!(guesses_BFGS[:, 1], guesses_BFGS[:, 2], xlim=x_lims, ylim=y_lims, color =:green, label = "BFGS")
 BFGS_plot = scatter!(guesses_BFGS[:, 1], guesses_BFGS[:, 2],  xlim=x_lims, ylim=y_lims, color =:green, label = "")
 
@@ -120,7 +120,7 @@ res_NTR = Optim.optimize(f, g!, h!, x0,
 # Collect guesses
 guesses_NTR = hcat(Optim.x_trace(res_NTR)...)'
 
-#contour(1.0:0.01:3.0, y_grid, (x,y)->f([x, y]), fill = false, levels = curve_levels)
+# Plot solution
 plot!(guesses_NTR[:, 1], guesses_NTR[:, 2], xlim=x_lims, ylim=y_lims, color =:gray, label = "Newton Trust Region")
 NTR_plot = scatter!(guesses_NTR[:, 1], guesses_NTR[:, 2],  xlim=x_lims, ylim=y_lims, color =:gray, label = "")
 
