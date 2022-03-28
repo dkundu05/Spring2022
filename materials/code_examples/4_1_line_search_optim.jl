@@ -111,5 +111,18 @@ guesses_BFGS = hcat(Optim.x_trace(res_BFGS)...)'
 plot!(guesses_BFGS[:, 1], guesses_BFGS[:, 2], xlim=x_lims, ylim=y_lims, color =:green, label = "BFGS")
 BFGS_plot = scatter!(guesses_BFGS[:, 1], guesses_BFGS[:, 2],  xlim=x_lims, ylim=y_lims, color =:green, label = "")
 
+# 5. Trust region
+# Solve it
+res_NTR = Optim.optimize(f, g!, h!, x0,
+                         NewtonTrustRegion(),
+                         Optim.Options(store_trace=true, extended_trace=true, x_abstol=1e-4))
+
+# Collect guesses
+guesses_NTR = hcat(Optim.x_trace(res_NTR)...)'
+
+#contour(1.0:0.01:3.0, y_grid, (x,y)->f([x, y]), fill = false, levels = curve_levels)
+plot!(guesses_NTR[:, 1], guesses_NTR[:, 2], xlim=x_lims, ylim=y_lims, color =:gray, label = "Newton Trust Region")
+NTR_plot = scatter!(guesses_NTR[:, 1], guesses_NTR[:, 2],  xlim=x_lims, ylim=y_lims, color =:gray, label = "")
+
 # Save combined plots
-savefig(BFGS_plot, "My_optimization_plot.png")
+savefig(NTR_plot, "My_optimization_plot.png")

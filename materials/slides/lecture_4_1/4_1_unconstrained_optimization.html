@@ -73,7 +73,7 @@ Pkg.instantiate()
 
 class: inverse, center, middle
 
-.footnote[\*These slides are based on Miranda &amp; Fackler (2002), Nocedal &amp; Wright (2006), Judd (1998), and course materials by Ivan Rudik.]
+.footnote[\*These slides are based on Miranda &amp; Fackler (2002), Nocedal &amp; Wright (2006), Judd (1998), and course materials by Ivan Rudik and Florian Oswald.]
 
 ---
 
@@ -366,7 +366,7 @@ Replace the endpoint of the interval next to the evaluated point with the highes
 
 ---
 
-## Derivative free optimization: Golden search
+## Derivative-free optimization: Golden search
 
 How do we pick `\(x_1\)` and `\(x_2\)`?
 
@@ -1110,8 +1110,8 @@ res_GD.minimizer
 
 ```
 ## 2-element Vector{Float64}:
-##  2.7136160576693604
-##  1.1425715540060508
+##  2.7136160576693613
+##  1.142571554006051
 ```
 
 ```julia
@@ -1222,13 +1222,13 @@ Optim.optimize(f, g!, h!, x0, Newton())
 ##     |x - x'|/|x'|          = 9.26e-01 ≰ 0.0e+00
 ##     |f(x) - f(x')|         = 1.06e+01 ≰ 0.0e+00
 ##     |f(x) - f(x')|/|f(x')| = 3.23e+00 ≰ 0.0e+00
-##     |g(x)|                 = 1.78e-15 ≤ 1.0e-08
+##     |g(x)|                 = 4.44e-16 ≤ 1.0e-08
 ## 
 ##  * Work counters
 ##     Seconds run:   1  (vs limit Inf)
 ##     Iterations:    1
-##     f(x) calls:    2
-##     ∇f(x) calls:   2
+##     f(x) calls:    4
+##     ∇f(x) calls:   4
 ##     ∇²f(x) calls:  1
 ```
 
@@ -1265,7 +1265,7 @@ Optim.optimize(f, x0, BFGS())
 ##     |x - x'|/|x'|          = 6.67e-01 ≰ 0.0e+00
 ##     |f(x) - f(x')|         = 1.47e+00 ≰ 0.0e+00
 ##     |f(x) - f(x')|/|f(x')| = 4.48e-01 ≰ 0.0e+00
-##     |g(x)|                 = 1.28e-10 ≤ 1.0e-08
+##     |g(x)|                 = 5.40e-11 ≤ 1.0e-08
 ## 
 ##  * Work counters
 ##     Seconds run:   0  (vs limit Inf)
@@ -1289,70 +1289,248 @@ class: inverse, center, middle
 
 # Trust regions algorithms
 
-&lt;!-- --- --&gt;
+---
 
-&lt;!-- ## Trust region methods --&gt;
+## Trust region methods
 
-&lt;!-- Trust region methods construct an approximating model, `\(m_k\)` --&gt;
-&lt;!-- whose behavior near the current iterate `\(x_k\)` is close to that of the actual function `\(f\)` --&gt;
+Trust region methods construct an approximating model, `\(m_k\)`
+whose behavior near the current iterate `\(x_k\)` is close to that of the actual function `\(f\)`
 
-&lt;!-- -- --&gt;
 
-&lt;!-- We then search for a minimizer of `\(m_k\)` --&gt;
+&lt;div align="center"&gt;
+ &lt;image src="figures/trust_region_shape.png", height=300&gt;
+&lt;/div&gt;
 
-&lt;!-- -- --&gt;
 
-&lt;!-- **Issue:** `\(m_k\)` may not represent `\(f\)` well when far away from the current iterate `\(x_k\)` --&gt;
+We then search for a minimizer of `\(m_k\)`
 
-&lt;!-- -- --&gt;
 
-&lt;!-- **Solution:** Restrict the search for a minimizer to be within some region of `\(x_k\)`, called a .hi-blue[trust region] --&gt;
+---
 
-&lt;!-- --- --&gt;
+## Trust region methods
 
-&lt;!-- ## Trust region methods --&gt;
+**Issue:** `\(m_k\)` may not represent `\(f\)` well when far away from the current iterate `\(x_k\)`
 
-&lt;!-- Trust region problems can be formulated as --&gt;
-&lt;!-- `$$\min_p m_k(x_k + p)$$` --&gt;
-&lt;!-- where --&gt;
-&lt;!-- - `\(x_k+p \in \Gamma\)` --&gt;
-&lt;!-- - `\(\Gamma\)` is a ball defined by `\(||p||_2 \leq \Delta\)` --&gt;
-&lt;!-- - `\(\Delta\)` is called the trust region radius --&gt;
+--
 
-&lt;!-- --- --&gt;
+**Solution:** Restrict the search for a minimizer to be within some region of `\(x_k\)`, called a **trust region**
 
-&lt;!-- ## Trust region Methods --&gt;
 
-&lt;!-- Typically the approximating model `\(m_k\)` is a quadratic function (i.e. a second-order Taylor approximation) --&gt;
-&lt;!-- `$$m_k(x_k + p) = f_k + p^T\,\nabla\,f_k + \frac{1}{2!}\,p^T\,B_k\,p$$` --&gt;
-&lt;!-- where `\(B_k\)` is the Hessian or an approximation to the Hessian --&gt;
+.footnote[We are only going to cover the basic of trust region methods. For details, see Nocedal &amp; Wright (2006), Chapter 4.]
 
-&lt;!-- &lt;div align="center"&gt; --&gt;
-&lt;!--   &lt;img src="figures/trust_region.png" height=300&gt; --&gt;
-&lt;!-- &lt;/div&gt; --&gt;
+---
 
-&lt;!-- --- --&gt;
+## Trust region methods
 
-&lt;!-- ## Line search vs trust region --&gt;
+Trust region problems can be formulated as
+`$$\min_p m_k(x_k + p)$$`
+where `\(x_k+p \in \Gamma\)`
+- `\(\Gamma\)` is a ball defined by `\(||p||_2 \leq \Delta_k\)`
+- `\(\Delta_k\)` is called the trust region radius
 
-&lt;!-- Whats the fundamental difference between line search and trust region? --&gt;
+--
 
-&lt;!-- -- --&gt;
+`\(\Delta_k\)` is adjusted every iteration based on how well `\(m_k\)` approximates `\(f_k\)` around current guess `\(x_k\)`
 
-&lt;!-- Line search first picks a direction then searches along that direction for the optimal step length --&gt;
+---
 
-&lt;!-- Trust region first defines our step length via the trust region radius, then searches for the optimal direction --&gt;
+## Trust region methods
 
-&lt;!-- --- --&gt;
+&lt;div style="float:right"&gt;
+  &lt;img src="figures/trust_region.png" height=350&gt;
+&lt;/div&gt;
 
-&lt;!-- ## Line search vs trust region --&gt;
+Typically the approximating model `\(m_k\)` is a quadratic function (i.e. a second-order Taylor approximation)
 
-&lt;!-- There is a special case of the trust region where if we set `\(B_k\)`, the approximate Hessian, to zero, --&gt;
-&lt;!-- the solution to the problem is --&gt;
-&lt;!-- `$$p_k = -\frac{\Delta_k \,\nabla \,f_k}{||\nabla\,f_k||}$$` --&gt;
+`$$m_k(x_k + p) = f_k + p^T\,\nabla\,f_k + \frac{1}{2!}\,p^T\,B_k\,p$$`
 
-&lt;!-- This is just the steepest descent solution for the line search problem --&gt;
+where `\(B_k\)` is the Hessian or an approximation to the Hessian
 
+--
+
+Solving this problem usually involves finding the *Cauchy point*
+
+---
+
+## Trust region methods
+
+&lt;div style="float:right"&gt;
+  &lt;img src="figures/Cauchy_point.png", height=300&gt;
+&lt;/div&gt;
+
+
+From `\(x_k\)`, the Cauchy point can be found in the direction 
+
+`$$p^C_k = -\tau_k \frac{\Delta_k}{||\nabla f_k||} \nabla f_k$$`
+So it's kind of a gradient descent ( `\(-\nabla f_k\)`), but with an adjusted step size within the trust region.
+--
+
+The step size depends on the radius `\(\Delta_k\)` and parameter `\(\tau_k\)`
+
+
+`\begin{gather}
+  \tau_k = \begin{cases}
+    1 &amp; \text{if} \; \nabla f_k^T B_k \nabla f_k \leq 0\\
+    \min(||\nabla f_k||^3/\Delta_k \nabla f_k^T B_k \nabla f_k, 1) &amp; \text{otherwise}
+  \end{cases}
+\end{gather}`
+
+
+
+---
+
+## Trust region methods
+
+If you ran `nlsolve` with default parameters, you may have noticed it uses `Trust region with dogleg`. What's the deal with the `dogleg`?
+
+--
+
+&lt;div style="float:right"&gt;
+  &lt;img src="figures/trust_region_dogleg.png", height=350&gt;
+&lt;/div&gt;
+
+It's an improvement on the Cauchy point method
+- It allows us to move in V-shaped trajectory instead of slowly adjusting with Cauchy directions along a curved path
+
+---
+
+## Trust region method illustration
+
+Let's see an illustration of the trust region method with the Branin function (it has 3 global minimizers)&lt;sup&gt;*&lt;/sup&gt;
+
+`$$min f(x_1, x_2) = (x_2 - 0.129x_1^2 + 1.6 x_1 - 6)^2 + 6.07 \cos(x_1) + 10$$`
+
+.footnote[* Source for this example: https://optimization.mccormick.northwestern.edu/index.php/Trust-region_methods]
+
+
+---
+
+## Trust region method illustration
+
+Contour plot
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/TRM-Branin.png", height=450&gt;
+&lt;/div&gt;
+
+
+---
+
+## Trust region method illustration
+
+Iteration 1
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/TRM-Iter1.png", height=450&gt;
+&lt;/div&gt;
+
+---
+
+## Trust region method illustration
+
+Iteration 2
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/TRM-Iter2.png", height=450&gt;
+&lt;/div&gt;
+
+---
+
+## Trust region method illustration
+
+Iteration 3
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/TRM-Iter3.png", height=450&gt;
+&lt;/div&gt;
+
+---
+
+## Trust region method illustration
+
+Iteration 4
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/TRM-Iter4.png", height=450&gt;
+&lt;/div&gt;
+
+
+---
+
+## Trust region method illustration
+
+Iteration 5
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/TRM-Iter5.png", height=450&gt;
+&lt;/div&gt;
+
+
+---
+
+## Trust region method illustration
+
+Iteration 6
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/TRM-Iter6.png", height=450&gt;
+&lt;/div&gt;
+
+
+---
+
+## Trust region methods in Julia
+
+`Optim` includes a `NewtonTrustRegion()` solution method. To use it, you can call `optimize` just like you did with `Newton()`
+
+--
+
+.blue[Your turn: use `Optim` and `NewtonTrustRegion` to solve the quadratic function illustrated in the line search methods (slide 57).]
+
+- Use default parameters. You can tweak solver parameters later by checking out the documentation [https://julianlsolvers.github.io/Optim.jl/stable/#algo/newton_trust_region/](https://julianlsolvers.github.io/Optim.jl/stable/#algo/newton_trust_region/)
+
+
+---
+
+## Trust region methods in Julia
+
+
+
+```julia
+Optim.optimize(f, g!, h!, x0, NewtonTrustRegion())
+```
+
+```
+##  * Status: success
+## 
+##  * Candidate solution
+##     Final objective value:     -3.285714e+00
+## 
+##  * Found with
+##     Algorithm:     Newton's Method (Trust Region)
+## 
+##  * Convergence measures
+##     |x - x'|               = 1.85e+00 ≰ 0.0e+00
+##     |x - x'|/|x'|          = 6.83e-01 ≰ 0.0e+00
+##     |f(x) - f(x')|         = 2.15e+00 ≰ 0.0e+00
+##     |f(x) - f(x')|/|f(x')| = 6.54e-01 ≰ 0.0e+00
+##     |g(x)|                 = 1.78e-15 ≤ 1.0e-08
+## 
+##  * Work counters
+##     Seconds run:   0  (vs limit Inf)
+##     Iterations:    2
+##     f(x) calls:    3
+##     ∇f(x) calls:   3
+##     ∇²f(x) calls:  3
+```
+
+---
+
+## Trust region methods in Julia
+
+&lt;div align="center"&gt;
+ &lt;image src="figures/Optim_NTR.png"&gt;
+&lt;/div&gt;
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

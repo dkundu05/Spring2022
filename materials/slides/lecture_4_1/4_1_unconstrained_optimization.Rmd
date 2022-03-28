@@ -88,7 +88,7 @@ Pkg.instantiate()
 
 class: inverse, center, middle
 
-.footnote[\*These slides are based on Miranda & Fackler (2002), Nocedal & Wright (2006), Judd (1998), and course materials by Ivan Rudik.]
+.footnote[\*These slides are based on Miranda & Fackler (2002), Nocedal & Wright (2006), Judd (1998), and course materials by Ivan Rudik and Florian Oswald.]
 
 ---
 
@@ -381,7 +381,7 @@ $\rightarrow$ guarantees that a local minimum still exists
 
 ---
 
-## Derivative free optimization: Golden search
+## Derivative-free optimization: Golden search
 
 How do we pick $x_1$ and $x_2$?
 
@@ -1072,67 +1072,220 @@ class: inverse, center, middle
 
 # Trust regions algorithms
 
-<!-- --- -->
+---
 
-<!-- ## Trust region methods -->
+## Trust region methods
 
-<!-- Trust region methods construct an approximating model, $m_k$ -->
-<!-- whose behavior near the current iterate $x_k$ is close to that of the actual function $f$ -->
+Trust region methods construct an approximating model, $m_k$
+whose behavior near the current iterate $x_k$ is close to that of the actual function $f$
 
-<!-- -- -->
 
-<!-- We then search for a minimizer of $m_k$ -->
+<div align="center">
+ <image src="figures/trust_region_shape.png", height=300>
+</div>
 
-<!-- -- -->
 
-<!-- **Issue:** $m_k$ may not represent $f$ well when far away from the current iterate $x_k$ -->
+We then search for a minimizer of $m_k$
 
-<!-- -- -->
 
-<!-- **Solution:** Restrict the search for a minimizer to be within some region of $x_k$, called a .hi-blue[trust region] -->
+---
 
-<!-- --- -->
+## Trust region methods
 
-<!-- ## Trust region methods -->
+**Issue:** $m_k$ may not represent $f$ well when far away from the current iterate $x_k$
 
-<!-- Trust region problems can be formulated as -->
-<!-- $$\min_p m_k(x_k + p)$$ -->
-<!-- where -->
-<!-- - $x_k+p \in \Gamma$ -->
-<!-- - $\Gamma$ is a ball defined by $||p||_2 \leq \Delta$ -->
-<!-- - $\Delta$ is called the trust region radius -->
+--
 
-<!-- --- -->
+**Solution:** Restrict the search for a minimizer to be within some region of $x_k$, called a **trust region**
 
-<!-- ## Trust region Methods -->
 
-<!-- Typically the approximating model $m_k$ is a quadratic function (i.e. a second-order Taylor approximation) -->
-<!-- $$m_k(x_k + p) = f_k + p^T\,\nabla\,f_k + \frac{1}{2!}\,p^T\,B_k\,p$$ -->
-<!-- where $B_k$ is the Hessian or an approximation to the Hessian -->
+.footnote[We are only going to cover the basic of trust region methods. For details, see Nocedal & Wright (2006), Chapter 4.]
 
-<!-- <div align="center"> -->
-<!--   <img src="figures/trust_region.png" height=300> -->
-<!-- </div> -->
+---
 
-<!-- --- -->
+## Trust region methods
 
-<!-- ## Line search vs trust region -->
+Trust region problems can be formulated as
+$$\min_p m_k(x_k + p)$$
+where $x_k+p \in \Gamma$
+- $\Gamma$ is a ball defined by $||p||_2 \leq \Delta_k$
+- $\Delta_k$ is called the trust region radius
 
-<!-- Whats the fundamental difference between line search and trust region? -->
+--
 
-<!-- -- -->
+$\Delta_k$ is adjusted every iteration based on how well $m_k$ approximates $f_k$ around current guess $x_k$
 
-<!-- Line search first picks a direction then searches along that direction for the optimal step length -->
+---
 
-<!-- Trust region first defines our step length via the trust region radius, then searches for the optimal direction -->
+## Trust region methods
 
-<!-- --- -->
+<div style="float:right">
+  <img src="figures/trust_region.png" height=350>
+</div>
 
-<!-- ## Line search vs trust region -->
+Typically the approximating model $m_k$ is a quadratic function (i.e. a second-order Taylor approximation)
 
-<!-- There is a special case of the trust region where if we set $B_k$, the approximate Hessian, to zero, -->
-<!-- the solution to the problem is -->
-<!-- $$p_k = -\frac{\Delta_k \,\nabla \,f_k}{||\nabla\,f_k||}$$ -->
+$$m_k(x_k + p) = f_k + p^T\,\nabla\,f_k + \frac{1}{2!}\,p^T\,B_k\,p$$
 
-<!-- This is just the steepest descent solution for the line search problem -->
+where $B_k$ is the Hessian or an approximation to the Hessian
 
+--
+
+Solving this problem usually involves finding the *Cauchy point*
+
+---
+
+## Trust region methods
+
+<div style="float:right">
+  <img src="figures/Cauchy_point.png", height=300>
+</div>
+
+
+From $x_k$, the Cauchy point can be found in the direction 
+
+$$p^C_k = -\tau_k \frac{\Delta_k}{||\nabla f_k||} \nabla f_k$$
+So it's kind of a gradient descent ( $-\nabla f_k$), but with an adjusted step size within the trust region.
+--
+
+The step size depends on the radius $\Delta_k$ and parameter $\tau_k$
+
+
+\begin{gather}
+  \tau_k = \begin{cases}
+    1 & \text{if} \; \nabla f_k^T B_k \nabla f_k \leq 0\\
+    \min(||\nabla f_k||^3/\Delta_k \nabla f_k^T B_k \nabla f_k, 1) & \text{otherwise}
+  \end{cases}
+\end{gather}
+
+
+
+---
+
+## Trust region methods
+
+If you ran `nlsolve` with default parameters, you may have noticed it uses `Trust region with dogleg`. What's the deal with the `dogleg`?
+
+--
+
+<div style="float:right">
+  <img src="figures/trust_region_dogleg.png", height=350>
+</div>
+
+It's an improvement on the Cauchy point method
+- It allows us to move in V-shaped trajectory instead of slowly adjusting with Cauchy directions along a curved path
+
+---
+
+## Trust region method illustration
+
+Let's see an illustration of the trust region method with the Branin function (it has 3 global minimizers)<sup>*</sup>
+
+$$min f(x_1, x_2) = (x_2 - 0.129x_1^2 + 1.6 x_1 - 6)^2 + 6.07 \cos(x_1) + 10$$
+
+.footnote[* Source for this example: https://optimization.mccormick.northwestern.edu/index.php/Trust-region_methods]
+
+
+---
+
+## Trust region method illustration
+
+Contour plot
+
+<div align="center">
+  <img src="figures/TRM-Branin.png", height=450>
+</div>
+
+
+---
+
+## Trust region method illustration
+
+Iteration 1
+
+<div align="center">
+  <img src="figures/TRM-Iter1.png", height=450>
+</div>
+
+---
+
+## Trust region method illustration
+
+Iteration 2
+
+<div align="center">
+  <img src="figures/TRM-Iter2.png", height=450>
+</div>
+
+---
+
+## Trust region method illustration
+
+Iteration 3
+
+<div align="center">
+  <img src="figures/TRM-Iter3.png", height=450>
+</div>
+
+---
+
+## Trust region method illustration
+
+Iteration 4
+
+<div align="center">
+  <img src="figures/TRM-Iter4.png", height=450>
+</div>
+
+
+---
+
+## Trust region method illustration
+
+Iteration 5
+
+<div align="center">
+  <img src="figures/TRM-Iter5.png", height=450>
+</div>
+
+
+---
+
+## Trust region method illustration
+
+Iteration 6
+
+<div align="center">
+  <img src="figures/TRM-Iter6.png", height=450>
+</div>
+
+
+---
+
+## Trust region methods in Julia
+
+`Optim` includes a `NewtonTrustRegion()` solution method. To use it, you can call `optimize` just like you did with `Newton()`
+
+--
+
+.blue[Your turn: use `Optim` and `NewtonTrustRegion` to solve the quadratic function illustrated in the line search methods (slide 57).]
+
+- Use default parameters. You can tweak solver parameters later by checking out the documentation [https://julianlsolvers.github.io/Optim.jl/stable/#algo/newton_trust_region/](https://julianlsolvers.github.io/Optim.jl/stable/#algo/newton_trust_region/)
+
+
+---
+
+## Trust region methods in Julia
+
+
+```{julia}
+Optim.optimize(f, g!, h!, x0, NewtonTrustRegion())
+```
+
+---
+
+## Trust region methods in Julia
+
+<div align="center">
+ <image src="figures/Optim_NTR.png">
+</div>
