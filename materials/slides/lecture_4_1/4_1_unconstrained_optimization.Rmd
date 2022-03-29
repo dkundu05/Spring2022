@@ -1259,6 +1259,16 @@ Iteration 6
   <img src="figures/TRM-Iter6.png", height=450>
 </div>
 
+---
+
+## Trust region method illustration
+
+Full trajectory
+
+<div align="center">
+  <img src="figures/TRM-Trajectory.png", height=450>
+</div>
+
 
 ---
 

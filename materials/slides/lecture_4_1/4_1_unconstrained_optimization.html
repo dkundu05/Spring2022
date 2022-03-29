@@ -1110,8 +1110,8 @@ res_GD.minimizer
 
 ```
 ## 2-element Vector{Float64}:
-##  2.7136160576693613
-##  1.142571554006051
+##  2.7136160576693604
+##  1.1425715540060508
 ```
 
 ```julia
@@ -1222,13 +1222,13 @@ Optim.optimize(f, g!, h!, x0, Newton())
 ##     |x - x'|/|x'|          = 9.26e-01 ≰ 0.0e+00
 ##     |f(x) - f(x')|         = 1.06e+01 ≰ 0.0e+00
 ##     |f(x) - f(x')|/|f(x')| = 3.23e+00 ≰ 0.0e+00
-##     |g(x)|                 = 4.44e-16 ≤ 1.0e-08
+##     |g(x)|                 = 1.78e-15 ≤ 1.0e-08
 ## 
 ##  * Work counters
 ##     Seconds run:   1  (vs limit Inf)
 ##     Iterations:    1
-##     f(x) calls:    4
-##     ∇f(x) calls:   4
+##     f(x) calls:    2
+##     ∇f(x) calls:   2
 ##     ∇²f(x) calls:  1
 ```
 
@@ -1265,7 +1265,7 @@ Optim.optimize(f, x0, BFGS())
 ##     |x - x'|/|x'|          = 6.67e-01 ≰ 0.0e+00
 ##     |f(x) - f(x')|         = 1.47e+00 ≰ 0.0e+00
 ##     |f(x) - f(x')|/|f(x')| = 4.48e-01 ≰ 0.0e+00
-##     |g(x)|                 = 5.40e-11 ≤ 1.0e-08
+##     |g(x)|                 = 1.28e-10 ≤ 1.0e-08
 ## 
 ##  * Work counters
 ##     Seconds run:   0  (vs limit Inf)
@@ -1476,6 +1476,16 @@ Iteration 6
   &lt;img src="figures/TRM-Iter6.png", height=450&gt;
 &lt;/div&gt;
 
+---
+
+## Trust region method illustration
+
+Full trajectory
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/TRM-Trajectory.png", height=450&gt;
+&lt;/div&gt;
+
 
 ---
 
@@ -1514,7 +1524,7 @@ Optim.optimize(f, g!, h!, x0, NewtonTrustRegion())
 ##     |x - x'|/|x'|          = 6.83e-01 ≰ 0.0e+00
 ##     |f(x) - f(x')|         = 2.15e+00 ≰ 0.0e+00
 ##     |f(x) - f(x')|/|f(x')| = 6.54e-01 ≰ 0.0e+00
-##     |g(x)|                 = 1.78e-15 ≤ 1.0e-08
+##     |g(x)|                 = 8.88e-16 ≤ 1.0e-08
 ## 
 ##  * Work counters
 ##     Seconds run:   0  (vs limit Inf)
