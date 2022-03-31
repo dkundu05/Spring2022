@@ -52,6 +52,7 @@ knitr::opts_hooks$set(fig.callout = function(options) {
 using Pkg
 Pkg.activate(".")
 Pkg.instantiate()
+Pkg.add("Ipopt")
 ```
 
 
@@ -309,7 +310,7 @@ A first idea is to penalize a candidate solution as much as possible whenever it
 `$$Q(x) = f(x) + \infty \mathbf{1}(g(x) \neq 0)$$`
 where `\(\mathbf{1}\)` is an indicator function
 
-- This the **infinite step** method
+- This is the **infinity step** method
 
 ---
 
@@ -495,169 +496,690 @@ The solution to the barrier problem converges to that of the original problem
 class: inverse, center, middle
 
 # Constrained optimization in Julia
-## with NLopt.jl and JuMP.jl
 
-&lt;!-- --- --&gt;
+---
 
+## Constrained optimization in Julia
 
 
-&lt;!-- --- --&gt;
+&lt;div style="float:right"&gt;
+  &lt;img src="figures/van_halen_jump.jpg" height=400&gt;
+&lt;/div&gt;
 
-&lt;!-- class: inverse, center, middle --&gt;
+We are going to cover a cool package called `JuMP.jl`
+- It offers a whole modeling language inside Julia
+- You define your model and plug it into one of the [many solvers available](https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers)
+- It's like GAMS and AMPL... *but FREE and with a full-fledged programming language around it*
 
-&lt;!-- # Practical advice for numerical optimization --&gt;
 
-&lt;!-- --- --&gt;
+---
 
+## Constrained optimization in Julia
 
-&lt;!-- ## Best practices for optimization --&gt;
+Most solvers can be accessed directly in their own packages
+- Like we did to use `Optim.jl`
+- These packages are usually just a Julia interface for a solver programmed in another language
 
-&lt;!-- Plug in your guess, let the solver go, and you're done right? --&gt;
+--
 
-&lt;!-- -- --&gt;
+But `JuMP` gives us a unified way of specifying our models and switching between solvers
 
-&lt;!-- ## WRONG! --&gt;
+`JuMP` specifically designed for constrained optimization but works with unconstrained too 
+- With more overhead relative to using `Optim` or `NLopt` directly
 
-&lt;!-- -- --&gt;
+---
 
-&lt;!-- These algorithms are not guaranteed to always find even a local solution,  --&gt;
-&lt;!-- you need to test and make sure you are converging correctly --&gt;
+## Getting stated with JuMP
 
-&lt;!-- --- --&gt;
+There are 5 key steps:
 
-&lt;!-- ## Check return codes --&gt;
+1) Initialize your model and solver: 
+- `mymodel = Model(SomeOptimizer)`
 
-&lt;!-- Return codes (or exit flags) tell you why the solver stopped --&gt;
-&lt;!-- - There are all sorts of reasons why a solver ends execution --&gt;
-&lt;!-- - Each solver has its own way of reporting errors --&gt;
+--
 
-&lt;!-- **READ THE SOLVER DOCUMENTATION!** --&gt;
+2) Declare variables (adding any box constraints)
+- `@variable(mymodel, x &gt;= 0)`
 
-&lt;!-- -- --&gt;
+--
 
-&lt;!-- Use trace options to get a sense of what went wrong --&gt;
-&lt;!-- - Did guesses grow unexpectedly? --&gt;
-&lt;!-- - Did a gradient-based operation fail? (E.g., division by zero) --&gt;
+3) Declare the objective function
 
-&lt;!-- --- --&gt;
+- If linear: `@objective(mymodel, Min, 12x + 20y)`
+- If nonlinear: `@NLobjective(mymodel, Min, 12x^0.7 + 20y^2)`
 
-&lt;!-- ## Check return codes --&gt;
+---
 
-&lt;!-- Examples from [Ipopt.jl documentation](https://coin-or.github.io/Ipopt/OUTPUT.html) --&gt;
+## Getting stated with JuMP
 
-&lt;!-- &lt;div align="center"&gt; --&gt;
-&lt;!--   &lt;img src="figures/ipopt_return_codes.png" height=550&gt; --&gt;
-&lt;!-- &lt;/div&gt; --&gt;
+4) Declare constraints
+- If linear: `@constraint(mymodel, c1, 6x + 8y &gt;= 100)`
+- If nonlinear: `@NLconstraint(mymodel, c1, 6x^2 - 2y &gt;= 100)`
 
-&lt;!-- --- --&gt;
+--
 
-&lt;!-- ## Try alternative algorithms --&gt;
+5) Solve it
+- `optimize!(mymodel)`
+- Note the `!`, so we are modifying `mymodel` and saving results in this object
 
-&lt;!-- Optimization is approximately 53% art --&gt;
+---
 
-&lt;!-- -- --&gt;
+## .blue[Follow along!]
 
-&lt;!-- Not all algorithms are suited for every problem `\(\rightarrow\)` it is useful to check how different algorithms perform --&gt;
+Let's use `JuMP` to solve the illustrative problem from the first slides
 
-&lt;!-- -- --&gt;
+We will use solver `Ipopt`, which stands for *Interior Point Optimizer*. It's a free solver we can access through package `Ipopt.jl`
 
-&lt;!-- Interior-point is usually the default in constrained optimization solvers (low memory usage, fast), but try other algorithms and see if the solution generally remains the same --&gt;
 
-&lt;!-- --- --&gt;
+```julia
+using JuMP, Ipopt;
+```
 
-&lt;!-- ## Problem scaling --&gt;
+---
 
-&lt;!-- The **scaling** of a problem matters for optimization performance --&gt;
+## .blue[Follow along: function definition]
 
-&lt;!-- -- --&gt;
+Define the function:
+$$
+\min_x -exp\left(-(x_1 x_2 - 1.5)^2 - (x_2 - 1.5)^2 \right)
+$$
 
-&lt;!-- A problem is **poorly scaled** if changes to `\(x\)` in a certain direction --&gt;
-&lt;!-- produce much bigger changes in `\(f\)` than changes to in `\(x\)` in another direction --&gt;
 
-&lt;!-- -- --&gt;
+```julia
+f(x1,x2) = -exp.(-(x1.*x2 - 3/2).^2 - (x2-3/2).^2);
+```
 
-&lt;!-- &lt;div align="center"&gt; --&gt;
-&lt;!--   &lt;img src="figures/poorly_scaled.png" height=400&gt; --&gt;
-&lt;!-- &lt;/div&gt; --&gt;
+---
 
-&lt;!-- --- --&gt;
+## .blue[Follow along: initialize model]
 
-&lt;!-- ## Problem scaling --&gt;
 
-&lt;!-- Ex: `\(f(x) = 10^9 x_1^2 + x_2^2\)` is poorly scaled --&gt;
+Initialize the model for `Ipopt`
 
-&lt;!-- -- --&gt;
+```julia
+model = Model(Ipopt.Optimizer)
+```
 
-&lt;!-- This happens when things change at different rates: --&gt;
-&lt;!-- - Investment rates are between 0 and 1 --&gt;
-&lt;!-- - Consumption can be in trillions of dollars --&gt;
+```
+## A JuMP Model
+## Feasibility problem with:
+## Variables: 0
+## Model mode: AUTOMATIC
+## CachingOptimizer state: EMPTY_OPTIMIZER
+## Solver name: Ipopt
+```
 
-&lt;!-- -- --&gt;
+--
 
-&lt;!-- How do we solve this issue? --&gt;
+You can set optimzer parameters like this
+- There are TONS of parameters you can adjust (see the [manual](https://coin-or.github.io/Ipopt/OPTIONS.html))
 
-&lt;!-- -- --&gt;
 
-&lt;!-- Rescale the problem: put them in units that are generally within an order of magnitude of 1 --&gt;
-&lt;!-- - Investment rate in percentage terms: `\(0\%-100\%\)` --&gt;
-&lt;!-- - Consumption in units of trillion dollars instead of dollars --&gt;
+```julia
+# This is relative tol. Default is 1e-8
+set_optimizer_attribute(model, "tol", 1e-6) 
+```
 
-&lt;!-- --- --&gt;
 
-&lt;!-- ## Be aware of tolerances --&gt;
+---
 
-&lt;!-- Two main tolerances in optimization: --&gt;
+## .blue[Follow along: declare variables]
 
-&lt;!-- 1. `ftol` is the tolerance for the change in the function value (absolute and relative) --&gt;
-&lt;!-- 2. `xtol` is the tolerance for the change in the input values (absolute and relative) --&gt;
+We will focus on non-negative values 
 
-&lt;!-- -- --&gt;
 
-&lt;!-- What is a suitable tolerance? --&gt;
+```julia
+@variable(model, x1 &gt;=0)
+```
 
+```
+## x1
+```
 
-&lt;!-- --- --&gt;
+```julia
+@variable(model, x2 &gt;=0)
+```
+
+```
+## x2
+```
+
+- You could type `@variable(model, x1)` to declare a `\(x_1\)` as a free variable
+
+
+---
+
+## .blue[Follow along: declare objective]
+
+We will focus on non-negative values 
+
+
+```julia
+@NLobjective(model, Min, f(x1, x2))
+```
+
+--
+
+`JuMP` will use autodiff (with `ForwardDiff` package) by default. If you want to use your define gradient and Hessian, you need to "register" the function like this
+```
+register(model, :my_f, n, f, grad, hessian)
+```
+- `:my_f` is the name you want to use inside `model`, `n` is the number of variables `f` takes, and `grad` `hessian` are user-defined functions
+
+
+---
+
+## .blue[Follow along: solving the model]
+
+First, let's solve the (mostly) unconstrained problem
+- Not really unconstrained because we defined non-negative `x1` and `x2` 
+
+Checking our model
+
+```julia
+print(model)
+```
+
+```
+## Min f(x1, x2)
+## Subject to
+##  x1 &gt;= 0.0
+##  x2 &gt;= 0.0
+```
+
+---
+
+## .blue[Follow along: solving the model]
+
+
+```julia
+optimize!(model)
+```
+
+```
+## 
+## ******************************************************************************
+## This program contains Ipopt, a library for large-scale nonlinear optimization.
+##  Ipopt is released as open source code under the Eclipse Public License (EPL).
+##          For more information visit https://github.com/coin-or/Ipopt
+## ******************************************************************************
+## 
+## This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+## 
+## Number of nonzeros in equality constraint Jacobian...:        0
+## Number of nonzeros in inequality constraint Jacobian.:        0
+## Number of nonzeros in Lagrangian Hessian.............:        0
+## 
+## Total number of variables............................:        2
+##                      variables with only lower bounds:        2
+##                 variables with lower and upper bounds:        0
+##                      variables with only upper bounds:        0
+## Total number of equality constraints.................:        0
+## Total number of inequality constraints...............:        0
+##         inequality constraints with only lower bounds:        0
+##    inequality constraints with lower and upper bounds:        0
+##         inequality constraints with only upper bounds:        0
+## 
+## iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+##    0 -1.1449605e-02 0.00e+00 1.03e+00   0.0 0.00e+00    -  0.00e+00 0.00e+00   0
+##    1 -1.3138288e-02 0.00e+00 5.01e-02  -1.4 4.40e-02    -  1.00e+00 1.00e+00f  1
+##    2 -1.4859511e-02 0.00e+00 4.47e-02  -3.4 4.04e-02    -  1.00e+00 1.00e+00f  1
+##    3 -1.6966706e-02 0.00e+00 4.95e-02  -4.8 4.45e-02    -  1.00e+00 1.00e+00f  1
+##    4 -1.9620344e-02 0.00e+00 5.56e-02  -5.5 4.94e-02    -  1.00e+00 1.00e+00f  1
+##    5 -2.3077725e-02 0.00e+00 6.35e-02  -6.3 5.56e-02    -  1.00e+00 1.00e+00f  1
+##    6 -2.7794373e-02 0.00e+00 7.43e-02  -6.8 6.35e-02    -  1.00e+00 1.00e+00f  1
+##    7 -3.4670094e-02 0.00e+00 9.00e-02  -7.3 7.43e-02    -  1.00e+00 1.00e+00f  1
+##    8 -4.5742703e-02 0.00e+00 1.15e-01  -7.8 9.00e-02    -  1.00e+00 1.00e+00f  1
+##    9 -6.6634419e-02 0.00e+00 1.62e-01  -8.1 1.15e-01    -  1.00e+00 1.00e+00f  1
+## iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+##   10 -1.1847930e-01 0.00e+00 2.76e-01  -8.6 1.62e-01    -  1.00e+00 1.00e+00f  1
+##   11 -3.3377241e-01 0.00e+00 6.61e-01  -8.5 2.76e-01    -  1.00e+00 1.00e+00f  1
+##   12 -7.4524828e-01 0.00e+00 1.28e+00  -8.5 6.61e-01    -  1.00e+00 1.00e+00f  1
+##   13 -9.4053727e-01 0.00e+00 6.18e-01 -11.0 1.28e+00    -  1.00e+00 2.30e-01f  3
+##   14 -9.9989242e-01 0.00e+00 3.10e-02  -9.6 9.60e-02    -  1.00e+00 1.00e+00f  1
+##   15 -9.9998421e-01 0.00e+00 8.53e-03 -11.0 5.07e-03    -  1.00e+00 1.00e+00f  1
+##   16 -9.9999077e-01 0.00e+00 4.17e-03 -11.0 1.04e-03    -  1.00e+00 1.00e+00f  1
+##   17 -9.9999761e-01 0.00e+00 3.13e-03 -11.0 1.78e-03    -  1.00e+00 1.00e+00f  1
+##   18 -9.9999999e-01 0.00e+00 2.95e-04 -11.0 1.38e-03    -  1.00e+00 1.00e+00f  1
+##   19 -1.0000000e+00 0.00e+00 3.32e-06 -11.0 7.45e-05    -  1.00e+00 1.00e+00f  1
+## iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+##   20 -1.0000000e+00 0.00e+00 1.33e-07 -11.0 5.74e-07    -  1.00e+00 1.00e+00f  1
+## 
+## Number of Iterations....: 20
+## 
+##                                    (scaled)                 (unscaled)
+## Objective...............:  -9.9999999999999656e-01   -9.9999999999999656e-01
+## Dual infeasibility......:   1.3262150989499029e-07    1.3262150989499029e-07
+## Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
+## Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
+## Complementarity.........:   9.9999999999991302e-12    9.9999999999991302e-12
+## Overall NLP error.......:   1.3262150989499029e-07    1.3262150989499029e-07
+## 
+## 
+## Number of objective function evaluations             = 27
+## Number of objective gradient evaluations             = 21
+## Number of equality constraint evaluations            = 0
+## Number of inequality constraint evaluations          = 0
+## Number of equality constraint Jacobian evaluations   = 0
+## Number of inequality constraint Jacobian evaluations = 0
+## Number of Lagrangian Hessian evaluations             = 0
+## Total seconds in IPOPT                               = 1.074
+## 
+## EXIT: Optimal Solution Found.
+```
 
-&lt;!-- ## Be aware of tolerances --&gt;
+---
 
-&lt;!-- It depends --&gt;
+## .blue[Follow along: solving the model]
 
-&lt;!-- -- --&gt;
+The return message is rather long and contains many details about the execution. You can turn this message off with
 
-&lt;!-- Explore sensitivity to tolerance, typically pick a conservative (small) number --&gt;
-&lt;!-- - Defaults in solvers are usually `1e-6` --&gt;
 
-&lt;!-- If you are using simulation-based estimators or estimators that depend on successive optimizations, be even more conservative *because errors compound* --&gt;
+```julia
+set_silent(model);
+```
 
-&lt;!-- --- --&gt;
+We can check minimizers with
 
-&lt;!-- ## Be aware of tolerances --&gt;
 
-&lt;!-- May be a substantial trade-off between accuracy of your solution and speed --&gt;
 
-&lt;!-- -- --&gt;
 
-&lt;!-- Common bad practice is to pick a larger tolerance (e.g. `1e-3`) so the problem "works" (e.g. so your big MLE converges) --&gt;
+```julia
+unc_x1 = value(x1)
+```
 
-&lt;!-- -- --&gt;
+```
+## 1.0000000326687912
+```
 
-&lt;!-- Issue is that `1e-3` might be pretty big for your problem if you haven't checked that your solution is not sensitive to the tolerance --&gt;
+```julia
+unc_x2 = value(x2)
+```
 
-&lt;!-- --- --&gt;
+```
+## 1.4999999423446968
+```
 
-&lt;!-- ## Perturb your initial guesses --&gt;
+```julia
+unc_obj = objective_value(model)
+```
 
-&lt;!-- **Initial guesses matter** --&gt;
+```
+## -0.9999999999999966
+```
 
-&lt;!-- -- --&gt;
+---
 
-&lt;!-- Good ones can improve performance --&gt;
-&lt;!-- - E.g. initial guess for next iteration of coefficient estimates should be current iteration estimates --&gt;
+## .blue[Follow along: solving the model]
 
-&lt;!-- -- --&gt;
 
-&lt;!-- Bad ones can give you terrible performance, or wrong answers if your problem isn't perfect --&gt;
-&lt;!-- - E.g. bad scaling, not well-conditioned, multiple equilibria --&gt;
+And the minimum with
+
+
+```julia
+unc_obj = objective_value(model)
+```
+
+```
+## -0.9999999999999966
+```
+
+
+---
+
+## .blue[Follow along: solving the model]
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/jump_ex1.png", height=450&gt;
+&lt;/div&gt;
+
+
+---
+
+## .blue[Follow along: declaring constraints]
+
+Let's add a nonlinear equality constraint `\(-x_1 + x^2 = 0\)` and re-solve the model
+
+```julia
+@NLconstraint(model, -x1 +x2^2 == 0)
+```
+
+```
+## (-x1 + x2 ^ 2.0) - 0.0 == 0
+```
+
+```julia
+print(model)
+```
+
+```
+## Min f(x1, x2)
+## Subject to
+##  x1 &gt;= 0.0
+##  x2 &gt;= 0.0
+##  (-x1 + x2 ^ 2.0) - 0.0 == 0
+```
+
+```julia
+optimize!(model)
+```
+
+---
+
+## .blue[Follow along: solving the equality constrained model]
+
+
+
+
+```julia
+eqcon_x1 = value(x1)
+```
+
+```
+## 1.3578043097074932
+```
+
+```julia
+eqcon_x2 = value(x2)
+```
+
+```
+## 1.1652486042512478
+```
+
+```julia
+value(-x1 + x2^2) # We can evaluate expressions too
+```
+
+```
+## 1.9877433032888803e-12
+```
+
+```julia
+eqcon_obj = objective_value(model)
+```
+
+```
+## -0.887974742266783
+```
+
+---
+
+## .blue[Follow along: solving the equality constrained model]
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/jump_ex2.png", height=450&gt;
+&lt;/div&gt;
+
+---
+
+## Solving the inequality constrained model
+
+I now initialize a new model with inequality constraint `\(-x_1 + x^2 \leq 0\)`
+
+
+```julia
+model2 = Model(Ipopt.Optimizer);
+@variable(model2, x1 &gt;=0);
+@variable(model2, x2 &gt;=0);
+@NLobjective(model2, Min, f(x1, x2));
+@NLconstraint(model2, -x1 + x2^2 &lt;= 0);
+optimize!(model2);
+```
+
+---
+
+## Solving the inequality constrained model
+
+
+```julia
+ineqcon_x1 = value(x1)
+```
+
+```
+## 1.357804311747407
+```
+
+```julia
+ineqcon_x2 = value(x2)
+```
+
+```
+## 1.165248609391406
+```
+
+```julia
+ineqcon_obj = objective_value(model2)
+```
+
+```
+## -0.887974743957088
+```
+
+Same results as in the equality constraint: the constraint is binding
+
+---
+
+## Solving the inequality constrained model
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/jump_ex3.png", height=450&gt;
+&lt;/div&gt;
+
+---
+
+## Relaxing the inequality constraint
+
+What if instead we use inequality constraint `\(-x_1 + x^2 \leq 1.5\)`?
+
+
+```julia
+model3 = Model(Ipopt.Optimizer);
+@variable(model3, x1 &gt;=0);
+@variable(model3, x2 &gt;=0);
+@NLobjective(model3, Min, f(x1, x2));
+@NLconstraint(model3, c1, -x1 + x2^2 &lt;= 1.5);
+optimize!(model3);
+```
+
+---
+
+## Relaxing the inequality constraint
+
+
+```julia
+ineqcon2_obj = objective_value(model3)
+```
+
+```
+## -1.0
+```
+
+```julia
+ineqcon2_x1 = value(x1)
+```
+
+```
+## 1.0000000035503052
+```
+
+```julia
+ineqcon2_x2 = value(x2)
+```
+
+```
+## 1.4999999931258383
+```
+
+We get the same results as in the unconstrained case
+
+---
+
+## Solving the inequality constrained model
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/jump_ex4.png", height=450&gt;
+&lt;/div&gt;
+
+
+---
+
+class: inverse, center, middle
+
+# Practical advice for numerical optimization
+
+---
+
+
+## Best practices for optimization
+
+Plug in your guess, let the solver go, and you're done right?
+
+--
+
+## WRONG!
+
+--
+
+These algorithms are not guaranteed to always find even a local solution,
+you need to test and make sure you are converging correctly
+
+---
+
+## Check return codes
+
+Return codes (or exit flags) tell you why the solver stopped
+- There are all sorts of reasons why a solver ends execution
+- Each solver has its own way of reporting errors
+- In `JuMP` you can use `@show termination_status(mymodel)`
+
+**READ THE SOLVER DOCUMENTATION!**
+
+--
+
+Use trace options to get a sense of what went wrong
+- Did guesses grow unexpectedly?
+- Did a gradient-based operation fail? (E.g., division by zero)
+
+---
+
+## Check return codes
+
+Examples from [Ipopt.jl documentation](https://coin-or.github.io/Ipopt/OUTPUT.html)
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/ipopt_return_codes.png" height=550&gt;
+&lt;/div&gt;
+
+---
+
+## Try alternative algorithms
+
+Optimization is approximately 53% art
+
+--
+
+Not all algorithms are suited for every problem `\(\rightarrow\)` it is useful to check how different algorithms perform
+
+--
+
+Interior-point is usually the default in constrained optimization solvers (low memory usage, fast), but try other algorithms and see if the solution generally remains the same
+
+---
+
+## Problem scaling
+
+The **scaling** of a problem matters for optimization performance
+
+--
+
+A problem is **poorly scaled** if changes to `\(x\)` in a certain direction
+produce much bigger changes in `\(f\)` than changes to in `\(x\)` in another direction
+
+--
+
+&lt;div align="center"&gt;
+  &lt;img src="figures/poorly_scaled.png" height=400&gt;
+&lt;/div&gt;
+
+---
+
+## Problem scaling
+
+Ex: `\(f(x) = 10^9 x_1^2 + x_2^2\)` is poorly scaled
+
+--
+
+This happens when things change at different rates:
+- Investment rates are between 0 and 1
+- Consumption can be in trillions of dollars
+
+--
+
+How do we solve this issue?
+
+--
+
+Rescale the problem: put them in units that are generally within an order of magnitude of 1
+- Investment rate in percentage terms: `\(0\%-100\%\)`
+- Consumption in units of trillion dollars instead of dollars
+
+---
+
+## Be aware of tolerances
+
+Two main tolerances in optimization:
+
+1. `ftol` is the tolerance for the change in the function value (absolute and relative)
+2. `xtol` is the tolerance for the change in the input values (absolute and relative)
+
+--
+
+What is a suitable tolerance?
+
+
+---
+
+## Be aware of tolerances
+
+It depends
+
+--
+
+Explore sensitivity to tolerance, typically pick a conservative (small) number
+- Defaults in solvers are usually `1e-6`
+
+If you are using simulation-based estimators or estimators that depend on successive optimizations, be even more conservative *because errors compound*
+
+---
+
+## Be aware of tolerances
+
+May be a substantial trade-off between accuracy of your solution and speed
+
+--
+
+Common bad practice is to pick a larger tolerance (e.g. `1e-3`) so the problem "works" (e.g. so your big MLE converges)
+
+--
+
+Issue is that `1e-3` might be pretty big for your problem if you haven't checked that your solution is not sensitive to the tolerance
+
+---
+
+## Perturb your initial guesses
+
+**Initial guesses matter**
+
+--
+
+Good ones can improve performance
+- E.g. initial guess for next iteration of coefficient estimates should be current iteration estimates
+
+--
+
+Bad ones can give you terrible performance, or wrong answers if your problem isn't perfect
+- E.g. bad scaling, not well-conditioned, multiple equilibria
 
 
 
