@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>AGEC 652 - Lecture 5.2</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Diego S. Cardoso" />
+    <script src="5_2_Estimation-review_files/header-attrs-2.11/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# AGEC 652 - Lecture 5.2
+## Review of nonlinear estimation: MLE and GMM
+### Diego S. Cardoso
+### Spring 2022
+
+---
+
+exclude: true
+
+```r
+if (!require("pacman")) install.packages("pacman")
+```
+
+```
+## Loading required package: pacman
+```
+
+```r
+pacman::p_load(
+  xaringanthemer, JuliaCall
+)
+
+#options(htmltools.dir.version = FALSE)
+
+knitr::opts_hooks$set(fig.callout = function(options) {
+  if (options$fig.callout) {
+    options$echo &lt;- FALSE
+  }
+
+  knitr::opts_chunk$set(echo = TRUE, fig.align="center")
+  options
+})
+```
+
+
+
+---
+
+## .blue[Course roadmap]
+
+1. .gray[Intro to Scientific Computing]
+2. .gray[Numerical operations and representations]
+3. .gray[Systems of equations]
+4. .gray[Optimization]
+5. **Structural estimation**
+  1. .gold[Introduction] 
+  2. **Review of estimation methods** `\(\leftarrow\)` .blue[You are here]
+  3. .gold[Estimation of single and multiple agent models]
+
+
+---
+
+
+class: inverse, center, middle
+
+.footnote[\*These slides are loosely based on Wooldridge (2010) and course materials by Matt Woerman (UMass) and Chris Conlon (NYU Stern).]
+
+---
+
+## Why do we need MLE and GMM?
+
+Sometimes, OLS is all we need
+- The parameters we need to estimate are linear in the model
+- Or they can be made linear with some clever transformation (like logs)
+
+--
+
+But, in many many cases, we need to estimate parameters that enter nonlinearly in the model
+- We need to resort to nonlinear estimators
+
+--
+
+MLE and GMM are the most used estimators for structural modeling and estimation
+
+---
+
+## Maximum Likelihood in one slide
+
+1. We observe some data `\((y_i, x_i), i=1,\dots,N\)` and assume it comes from a joint distribution described by parameter vector `\(\theta\)`
+
+--
+
+2. For any given `\(\theta\)` we can calculate the joint probability of our data
+  - If observations are i.i.d., this joint probability is a product of individual probabilities of drawing `\((y_i, x_i)\)`
+
+--
+
+3. Using Bayes' rule, we can calculate the probability of `\(\theta\)` given `\((y_i, x_i)\)`: the **likelihood function**
+
+--
+
+4. The MLE estimate is the value of `\(\theta\)` that maximizes the likelihood: *we pick the parameters that make it most likely to generate the observed data*
+
+---
+
+## Maximum Likelihood intuition
+
+Suppose we draw five numbers from a normal distribution: 
+`$$y = {47.3, 51.2, 50.5, 44.9, 53.1}$$`
+
+--
+
+And we consider two candidate distributions: `\(N(0,1)\)` or `\(N(50, 1)\)`
+
+--
+
+- What is the likelihood of `\(N(0,1)\)` generating `\(y\)`? 
+--
+Virtually zero
+  
+--
+
+- What is the likelihood of `\(N(50,1)\)` generating `\(y\)`? 
+--
+Definitely greater
+
+--
+
+So, between these two, we pick `\(\mu = 50\)`, since it's *more likely* to generate `\(y\)` than `\(\mu = 0\)`
+
+
+---
+
+## Maximum Likelihood example
+
+Linear regression: we have `\(Y_{it} = X_i\beta + \epsilon_i\)` and assume `\(\epsilon_i | X_i \sim N(0, \sigma^2)\)`
+
+--
+
+With i.i.d. observations, these imply the joint density ($\phi$ is the normal PDF)
+
+`$$f(X_1,\dots\,X_N,Y_1,\dots\,Y_N,\beta,\sigma^2) = \prod_{i=1}^N \phi(Y_i-X_i\beta,\sigma^2)$$`
+
+--
+
+By Bayes' rule
+`$$\prod_{i=1}^N \phi(Y_i-X_i\beta,\sigma^2) \propto \prod_{i=1}^N \phi(Y_i-X_i\beta,\sigma^2) = L(\beta,\sigma^2|X,Y)$$`
+
+
+---
+
+## Maximum Likelihood example
+
+Then, we use optimization methods to find
+`$$(\hat{\beta}_{MLE},\hat{\sigma}^2_{MLE}) = \arg \max_{\beta,\sigma^2} L(\beta,\sigma^2|X,Y)$$`
+
+- We can show that this solution is analytically equivalent to OLS
+
+--
+
+- As we saw it in the optimization tutorial, in practice we take logs to transform that product inside `\(L\)` into a sum
+  - We maximize the *log-likelihood function* `\(l(\beta,\sigma^2|X,Y)\)`
+
+---
+
+## Generalized Method of Moments in one slide
+
+1. Our economic model defines the following population moment conditions: at the true parameter `\(\theta_0\)`, `\(g(x;\theta)\)` are on average equal to zero
+`$$E[g(x;\theta_0)] = 0$$`
+
+--
+
+2. We observe some data `\(x_i, i=1,\dots,N\)` and calculate sample analogue 
+`$$E[g(x;\theta)] \approx \frac{1}{N} \sum_{i=1}^N g(x_i;\theta) \equiv g_N(\theta)$$`
+
+--
+
+3. The GMM estimate is given by ( `\(W_N\)` is a weighting matrix)
+`$$\hat{\theta}_{GMM} = \arg \min_\theta g_N(\theta)^\prime \; W_N \; g_N(\theta)$$`
+
+---
+
+## (Generalized) Method of Moments intuition
+
+Suppose we draw five numbers from an unknown distribution
+`$$y = {47.3, 51.2, 50.5, 44.9, 53.1}$$`
+
+--
+
+Suppose this unknown distribution has mean `\(\mu\)`, giving a population moment condition
+
+`$$E[y_i] = \mu \Rightarrow E[y_i - \mu] = 0$$`
+
+--
+
+We expect the population moment condition to also hold in the sample analogue
+
+`$$\frac{1}{N}\sum_{i=1}^N (y_i - \mu) = 0$$`
+
+---
+
+## (Generalized) Method of Moments intuition
+
+Forget the weighting matrix for now. We have one condition and one parameter, so this is effectively a special case: just *Method of Moments*
+
+--
+
+For our estimate, we pick `\(\hat{\mu}\)` that minimizes
+
+$$\left(\frac{1}{N}\sum_{i=1}^N (y_i - \hat{\mu})\right)^2 $$
+
+In this simple case, this is just solving for `\(\frac{1}{N}\sum_{i=1}^N (y_i - \hat{\mu}) = 0\)`
+
+
+---
+
+## Generalized Method of Moments example
+
+Linear regression: again, we have `\(Y_{it} = X_i\beta + \epsilon_i\)`. But now, instead of normality, we assume `\(\epsilon_i\)` is orthogonal to data `\(X_i\)` (a `\(1 \times K\)` vector)
+`$$E[x_{ki} \epsilon_i] = 0 \Rightarrow E[x_{ki} (Y_i - X_i\beta)] = 0$$`
+- This actually gives `\(K\)` moment conditions: one for each variable `\(x_{ki} \in X_i\)`
+
+--
+
+We replace these `\(K\)` conditions with their respective sample analogues and solve for
+
+`$$\frac{1}{N}\sum_{i=1}^N x_{ki} (Y_i - X_i \hat{\beta}) = 0$$`
+
+--
+
+- We can show that this solution is analytically equivalent to OLS, too
+
+
+---
+
+## MLE vs GMM
+
+It's the same old **bias (or robustness) vs. efficiency trade-off**
+
+--
+
+- With MLE, we need to make assumption on distributions of unobservables
+  - When our assumptions are correct, MLE is more efficient `\(\rightarrow\)` lower variance
+  - Has good small sample properties (less bias, more efficiency with small data)
+  - If our assumptions are inadequate, estimates are more biased
+  
+  
+--
+
+- With GMM, we don't need to assume distributions and can rely only on moment conditions from the theoretical and statistical model
+  - This is more robust `\(=\)` less bias
+  - Has good large sample properties (less bias, more efficiency with large data)
+  - But it's in general less efficient than MLE `\(\rightarrow\)` higher variance
+
+---
+
+## Choosing between MLE and GMM
+
+- *How much data is available?*
+  - Large data sets favor GMM: good large sample properties requiring fewer assumptions
+--
+
+- *How complex is the model?*
+  - MLE is better suited for linear and quadratic models, but technically difficult to compute with highly nonlinear models. For the latter case, GMM might be better
+--
+
+- *How comfortable are you making distributional assumptions?*
+  - MLE requires you to fully specify distributions. If there is good theoretical grounding for these assumptions, MLE is a good idea. Otherwise, GMM is the more attractive option
+
+
+---
+
+class: inverse, center, middle
+# Maximum Likelihood Estimation
+
+---
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
