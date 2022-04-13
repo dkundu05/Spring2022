@@ -587,7 +587,7 @@ $$W_0 = S_0^{-1} = \left\{E[g(z_i; \theta_0) g(z_i; \theta_0)^\prime]\right\}^{-
 
 which yields
 
-$$Var(\hat{\theta}_{GMM}) = (D_0^\prime W_0 D_0)^{-1}$$
+$$Var(\hat{\theta}_{GMM}) = (D_0^\prime S_0^{-1} D_0)^{-1}$$
 ---
 
 ## Computing $\hat{\theta}_{GMM}$
