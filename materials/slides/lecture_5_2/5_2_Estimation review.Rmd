@@ -82,7 +82,7 @@ style_extra_css(css = extra_css)
 
 class: inverse, center, middle
 
-.footnote[\*These slides are loosely based on Wooldridge (2010) and course materials by Matt Woerman (UMass) and Chris Conlon (NYU Stern).]
+.footnote[\*These slides draw from Wooldridge (2010) and course materials by Matt Woerman (UMass) and Chris Conlon (NYU Stern).]
 
 ---
 
@@ -156,9 +156,9 @@ Linear regression: we have $Y_{it} = X_i\beta + \epsilon_i$ and assume $\epsilon
 
 --
 
-With i.i.d. observations, these imply the joint density ($\phi$ is the normal PDF)
+With i.i.d. observations, these imply the joint conditional density ($\phi$ is the normal PDF)
 
-$$f(X_1,\dots\,X_N,Y_1,\dots\,Y_N,\beta,\sigma^2) = \prod_{i=1}^N \phi(Y_i-X_i\beta,\sigma^2)$$
+$$f(Y_1,\dots\,Y_N|X_1,\dots\,X_N,\beta,\sigma^2) = \prod_{i=1}^N \phi(Y_i-X_i\beta,\sigma^2)$$
 
 --
 
@@ -276,7 +276,7 @@ It's the same old **bias (or robustness) vs. efficiency trade-off**
 ## Choosing between MLE and GMM
 
 - *How much data is available?*
-  - Large data sets favor GMM: good large sample properties requiring fewer assumptions
+  - Large data sets favor GMM: good large sample properties require fewer assumptions. Smaller data sets might require stronger distributional assumptions $\rightarrow$ MLE
 --
 
 - *How complex is the model?*
@@ -286,6 +286,22 @@ It's the same old **bias (or robustness) vs. efficiency trade-off**
 - *How comfortable are you making distributional assumptions?*
   - MLE requires you to fully specify distributions. If there is good theoretical grounding for these assumptions, MLE is a good idea. Otherwise, GMM is the more attractive option
 
+---
+
+## Up next
+
+We are going to review MLE and GMM with a focus on application: properties of these estimators and how to implement them in practice
+
+--
+
+We won't cover
+- Proofs of asymptotic properties
+- Small sample properties
+- Hypothesis testing and model selection statistics
+- Specialized numerical methods for their estimation
+
+Some good textbooks to learn about these details: Wooldridge (PhD-level), Hayashi, Hansen, Greene
+
 
 ---
 
@@ -293,3 +309,295 @@ class: inverse, center, middle
 # Maximum Likelihood Estimation
 
 ---
+
+## MLE: General case
+
+1. Start with the **joint density of the data** $z_1, \dots, z_N$ given by $f_Z(Z; \theta)$
+
+--
+
+2. Assuming an i.i.d. sample, construct the **log likelihood function**<sup>1</sup>
+$$l(\theta | Z) = \log\left(\prod_{i=1}^N f_Z(z_i;\theta)\right) = \sum_{i=1}^N \log f_Z(z_i;\theta)$$
+
+--
+
+3. Compute $\hat{\theta}_{MLE} = \arg \max_\theta l(\theta | Z)$
+
+--
+
+4. Compute $Var(\hat{\theta}_{MLE})$, the variance-covariance matrix of the estimates
+
+.footnote[<sup>1</sup>We take logs to simplify computation. Log is a positive monotonic transformation, so it preserves the max.]
+
+
+
+---
+
+## Properties of MLE
+
+
+Under some *regularity conditions*, MLE has the following properties
+
+
+1. Consistency
+2. Asymptotic normality
+3. Asymptotic efficiency
+4. Invariance
+
+---
+
+## Properties of MLE: Consistency
+
+--
+
+$$\hat{\theta}_{MLE} \stackrel{p}{\rightarrow} \theta_0$$
+
+As sample size grows to infinity, $\hat{\theta}_{MLE}$ gets arbitrarily close to the true parameter value, $\theta_0$
+
+---
+
+## Properties of MLE: Asymptotic normality
+
+--
+
+$$\sqrt{N}(\hat{\theta}_{MLE}-\theta_0) \stackrel{d}{\rightarrow} \mathcal{N}\left(0, I(\theta_0)^{-1}\right)$$
+where $I(\theta_0)$ is the Fisher Information Matrix, given by
+
+$$I(\theta_0) = -E\left[\frac{\partial^2 l(\theta_0)}{\partial \theta_0 \partial \theta_0^{\prime}}\right]$$
+
+--
+
+As the sample size grows to infinity, the distribution of $\hat{\theta}_{MLE}$ converges to a normal distribution with mean as the true parameter value and a particular Variance-Covariance structure
+
+
+---
+
+## Properties of MLE: Asymptotic normality
+
+Note that $I(\theta_0)$ is the expectation of the Hessian of $l$ evaluated at the true parameter
+- This has a meaningful intuition: we are more certain of MLE estimates when the (log-) likelihood function has more curvature!
+
+--
+
+The asymptotic variance-covariance matrix is then given by
+$$Var(\hat{\theta}_{MLE}) = \left\{ -E\left[\frac{\partial^2 l(\theta_0)}{\partial \theta_0 \partial \theta_0^{\prime}}\right] \right\}^{-1}$$
+---
+
+## Properties of MLE: Asymptotic efficiency
+
+
+$\hat{\theta}_{MLE}$ achieves the Cramér-Rao lower bound
+
+$$Var(\hat{\theta}_{MLE}) = I(\theta_0)^{-1}$$
+
+- No consistent estimator has lower asymptotic variance than the MLE
+
+
+---
+
+## Properties of MLE: Invariance
+
+Let $f(\theta_0)$ be a continuous and continuously differentiable function. Then
+
+$$\widehat{f(\theta_0)}_{MLE} = f(\hat{\theta}_{MLE})$$
+- The MLE of a function of $\theta$ is the function applied to the $\hat{\theta}_{MLE}$ 
+
+---
+
+## MLE variance estimator
+
+The variance-covariance matrix of the MLE can be estimated using
+
+$$Var(\hat{\theta}_{MLE}) = \left\{ \left. \frac{\partial^2 l(\theta)}{\partial \theta \partial \theta^{\prime}}\right|_{\theta=\hat{\theta}_{MLE}} \right\}^{-1}$$
+So we calculate the Hessian of $l$ at the estimated parameter values.
+
+- This is the simplest variance estimator. More robust estimators exist but are beyond our scope here
+
+
+---
+
+## Computing $\hat{\theta}_{MLE}$
+
+We can use any of the maximization methods we've seen so far to calculate $\hat{\theta}_{MLE}$
+- Unconstrained optimization with `Optim` (you can use the log/exp transformation to avoid domain problems with negative $\sigma^2$)
+- Constrained optimization with `JuMP` (can set a constraint for $\sigma^2\ge0$)
+- If closed-form derivatives of $l$ are easy to obtain, you can use nonlinear rootfinding methods
+
+--
+
+There is a specialized Quasi-Newton method for MLE called *BHHH (Berndt-Hall-Hall-Hausman)*
+- It has good properties approximating the Hessian of log-likelihoods and is faster than computing the actual Hessian every iteration
+
+---
+
+## Computing $Var(\hat{\theta}_{MLE})$
+
+
+To estimate the variance-covariance matrix, you can
+- Derive the analytic Hessian (usually hard)
+- Calculate it numerically using, for example, `ForwardDiff.hessian`
+
+--
+
+Once you've calculated the variance-covariance matrix, standard errors can be easily calculated as the square root of its diagonal elements
+$$SE(\hat{\theta}_{MLE}) = \sqrt{diag(Var(\hat{\theta}_{MLE}))}$$
+
+--
+
+
+*For a step-by-step example of MLE, please review the optimization tutorial from unit 4*
+
+
+---
+
+class: inverse, center, middle
+# Generalized Method of Moments
+
+---
+
+## GMM: General case
+
+
+1. Start with data $z_1, \dots, z_N$ drawn from a population with $M$ moment conditions that are functions of vector $\theta$ with $K \leq M$ parameters<sup>1</sup>
+$$E[g(Z; \theta)] = 0$$
+.footnote[<sup>1</sup> The "generalized" in GMM comes from allowing more moment conditions than parameters; the "standard" Method of Moments requires M=K]
+
+--
+
+Where do moment conditions come from?
+- Economic model conditions: first-order optimality, market clearing, zero arbitrage, etc 
+- Statistical assumptions: error orthogonality $(E[x\epsilon]=0)$
+- Instruments orthogonality $(E[z\epsilon]=0)$
+- Model fit: predicted market shares are equal to realized market shares
+
+---
+
+## GMM: General case
+
+2\. Construct empirical (sample analogue) moment conditions
+$$\frac{1}{N} \sum_{i=1}^N g(z_i; \theta) = 0$$
+
+
+
+---
+
+## GMM: General case
+
+
+3\. Compute the GMM estimate
+
+$$\hat{\theta}_{GMM} = \arg \min_\theta Q_N(\theta), \; Q_N(\theta) = \left[\frac{1}{N} \sum_{i=1}^N g(z_i; \theta)\right]^\prime W \left[\frac{1}{N} \sum_{i=1}^N g(z_i; \theta)\right]$$
+--
+
+- If $M = K$ and the problem is well-conditioned, then $\frac{1}{N} \sum_{i=1}^N g(z_i; \theta) = 0$ is $K\times K$ (non)linear system and we can find the $\hat{\theta}$ that solves it
+--
+
+- But if $M > K$, we almost certainly can't find $K$ parameters that satisfy more that $K$ conditions simultaneously
+  - So we look for parameters that get as close as possible to satisfying all moment conditions $\rightarrow$ we minimize deviations from zero, weighted by a $M\times M$ matrix $W$
+
+
+---
+
+## GMM: General case
+
+4\. Compute $Var(\hat{\theta}_{GMM})$, the variance-covariance matrix of the estimates
+- More on that soon
+
+---
+
+## Properties of GMM
+
+Under some *regularity conditions*, MLE has the following properties
+
+
+1. Consistency
+2. Asymptotic normality
+
+--
+- Note that, unlike MLE, GMM is not asymptotically efficient
+
+These properties require some assumptions on the empirical moments
+
+---
+
+## Properties of GMM: empirical moments assumption
+
+We assume the following about empirical moments at the true parameter value, $\theta_0$
+
+1. Empirical moments obey the law of large numbers
+$$\frac{1}{N} \sum_{i=1}^N g(z_i; \theta_0) \stackrel{p}{\rightarrow} 0$$
+
+--
+
+2. The derivatives of the empirical moments converge to the $M \times K$ Jacobian matrix
+$$\frac{1}{N} \sum_{i=1}^N \left.\frac{\partial g(z_i; \theta)}{\partial \theta^\prime}\right|_{\theta=\theta_0} \stackrel{p}{\rightarrow}  D_0 \equiv D(\theta_0) = E\left[\frac{\partial g(z_i; \theta_0)}{\partial \theta_0^\prime}\right]$$
+
+---
+
+## Properties of GMM: empirical moments assumption
+
+3\. Empirical moments obey the central limit theorem
+$$\sqrt{N}\frac{1}{N} \sum_{i=1}^N g(z_i; \theta_0) \stackrel{d}{\rightarrow} \mathcal{N}(0, S_0)$$
+
+where $S_0 = E[g(z_i; \theta_0) g(z_i; \theta_0)^\prime]$ it the variance-covariance matrix of moments (an $M\times M$ matrix)
+
+--
+
+- We also need to assume that the weighting matrix converges to $W_0$, a finite symmetric positive definite matrix
+
+$$W \stackrel{p}{\rightarrow}W_0$$
+
+---
+
+## Properties of GMM: consistency
+$$\hat{\theta}_{GMM} \stackrel{p}{\rightarrow} \theta_0$$
+
+As sample size grows to infinity, $\hat{\theta}_{GMM}$ gets arbitrarily close to the true parameter value, $\theta_0$
+
+---
+
+## Properties of GMM: Asymptotic normality
+
+--
+
+$$\sqrt{N}(\hat{\theta}_{GMM}-\theta_0) \stackrel{d}{\rightarrow} \mathcal{N}\left(0, V_0\right)$$
+where $V_0$ has a typical *sandwich form*
+
+$$V_0 = \underbrace{(D_0^\prime W_0 D_0)^{-1}}_{\text{bread}}\underbrace{(D_0^\prime W_0 S_0 W_0 D_0)}_{\text{filling}} \underbrace{(D_0^\prime W_0 D_0)^{-1}}_{\text{bread}}$$
+
+--
+
+As the sample size grows to infinity, the distribution of $\hat{\theta}_{GMM}$ converges to a normal distribution with mean as the true parameter value and a particular Variance-Covariance structure
+
+
+---
+
+## GMM variance estimator
+
+Any valid weighting matrix $W$ yields a consistent GMM estimator
+
+But the choice of $W$ affects variance, so we want to use some optimal $W$ that minimizes the variance of the estimator
+
+
+--
+
+It can be shown that the **optimal weigthing matrix** is given by
+
+$$W_0 = S_0^{-1} = \left\{E[g(z_i; \theta_0) g(z_i; \theta_0)^\prime]\right\}^{-1}$$
+
+which yields
+
+$$Var(\hat{\theta}_{GMM}) = (D_0^\prime W_0 D_0)^{-1}$$
+---
+
+## Computing $\hat{\theta}_{GMM}$
+
+<!-- - We need W. How to calculate W? 2-step GMM -->
+
+<!-- ## Computing $Var(\hat{\theta}_{GMM})$ -->
+
+<!-- ## Finite sample VCOV with bootstrapping -->
+
+
+
+
