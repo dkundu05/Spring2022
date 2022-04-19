@@ -136,18 +136,18 @@ So, between these two, we pick `\(\mu = 50\)`, since it's *more likely* to gener
 
 ## Maximum Likelihood example
 
-Linear regression: we have `\(Y_{it} = X_i\beta + \epsilon_i\)` and assume `\(\epsilon_i | X_i \sim N(0, \sigma^2)\)`
+Linear regression: we have `\(Y_{i} = X_i\beta + \epsilon_i\)` and assume `\(\epsilon_i | X_i \sim N(0, \sigma^2)\)`. This implies `\(Y_i | X_i \sim N(X_i\beta, \sigma^2)\)`
 
 --
 
-With i.i.d. observations, these imply the joint conditional density ($\phi$ is the normal PDF)
+Given the parameters and i.i.d. observations, the data come from a joint distribution ( `\(\phi\)` is the standard normal PDF) 
 
-`$$f(Y_1,\dots\,Y_N|X_1,\dots\,X_N,\beta,\sigma^2) = \prod_{i=1}^N \phi(Y_i-X_i\beta,\sigma^2)$$`
+`$$Pr(Y_1,\dots,Y_N| X_1,\dots,X_N;\beta,\sigma^2) = \prod_{i=1}^N \Pr(Y_i | X_i, \beta,\sigma^2) = \prod_{i=1}^N \phi(Y_i-X_i\beta;0,\sigma^2)$$`
 
 --
 
-By Bayes' rule
-`$$\prod_{i=1}^N \phi(Y_i-X_i\beta,\sigma^2) \propto \prod_{i=1}^N \phi(Y_i-X_i\beta,\sigma^2) = L(\beta,\sigma^2|X,Y)$$`
+By Bayes' rule 
+`$$L(\beta,\sigma^2|X,Y) = \prod_{i=1}^N \Pr(\beta,\sigma^2|Y_i, X_i) \propto \prod_{i=1}^N \Pr(Y_i | X_i, \beta,\sigma^2)$$`
 
 
 ---
@@ -491,7 +491,7 @@ Where do moment conditions come from?
 
 ## Properties of GMM
 
-Under some *regularity conditions*, MLE has the following properties
+Under some *regularity conditions*, GMM has the following properties
 
 
 1. Consistency
@@ -523,7 +523,7 @@ We assume the following about empirical moments at the true parameter value, `\(
 3\. Empirical moments obey the central limit theorem
 `$$\sqrt{N}\frac{1}{N} \sum_{i=1}^N g(z_i; \theta_0) \stackrel{d}{\rightarrow} \mathcal{N}(0, S_0)$$`
 
-where `\(S_0 = E[g(z_i; \theta_0) g(z_i; \theta_0)^\prime]\)` it the variance-covariance matrix of moments (an `\(M\times M\)` matrix)
+where `\(S_0 = E[g(z_i; \theta_0) g(z_i; \theta_0)^\prime]\)` is the variance-covariance matrix of moments (an `\(M\times M\)` matrix)
 
 --
 
@@ -572,18 +572,196 @@ It can be shown that the **optimal weigthing matrix** is given by
 which yields
 
 `$$Var(\hat{\theta}_{GMM}) = (D_0^\prime S_0^{-1} D_0)^{-1}$$`
+
+.footnote[This is the "non-robust" VCOV matrix, i.e., assuming homoskedasticity and no clustering/residual correlation structure. Check references to see how to construct robust versions.]
+
 ---
 
 ## Computing `\(\hat{\theta}_{GMM}\)`
 
-&lt;!-- - We need W. How to calculate W? 2-step GMM --&gt;
+This is the objective function for GMM 
 
-&lt;!-- ## Computing `\(Var(\hat{\theta}_{GMM})\)` --&gt;
+`$$\hat{\theta}_{GMM} = \arg \min_\theta Q_N(\theta), \; Q_N(\theta) = \left[\frac{1}{N} \sum_{i=1}^N g(z_i; \theta)\right]^\prime W \left[\frac{1}{N} \sum_{i=1}^N g(z_i; \theta)\right]$$`
 
-&lt;!-- ## Finite sample VCOV with bootstrapping --&gt;
+Once again, we can use numerical optimization to calculate `\(\hat{\theta}_{GMM}\)`
+
+--
+
+But what `\(W\)` do we use?
+
+---
+
+## Computing `\(\hat{\theta}_{GMM}\)`
+
+Technically, the GMM estimator is consistent for any symmetric positive definite matrix
+
+But different matrices give different variances `\(\rightarrow\)` we want to pick `\(W\)` that minimizes variance
+
+--
+
+This is, the sample analogue of the **optimal weigthing matrix**
+`$$\hat{W} = \hat{S}^{-1} = \left\{E[g(z_i; \hat{\theta}) g(z_i; \hat{\theta})^\prime]\right\}^{-1}$$`
+--
+
+But we have a chicken and egg problem here: we need `\(\hat{W}\)` to estimate `\(\hat{\theta}\)` but we need `\(\hat{\theta}\)` to get `\(\hat{W}\)`!
+
+---
+
+## Computing `\(\hat{\theta}_{GMM}\)`: 2-step GMM
+
+One way to solve this problem is to apply a widely-used algorithm: the **2-step GMM**
+
+--
+
+**Step 1**
+- Using `\(W = I\)` (identity matrix), estimate `\(\hat{\theta}_1\)`
+  - Alternatives exist, but we are going to stick with the simplest here
+--
+
+- With `\(\hat{\theta}_1\)`, calculate `\(\hat{W} = \left\{E[g(z_i; \hat{\theta}) g(z_i; \hat{\theta})^\prime]\right\}^{-1}\)`
+
+---
+
+## Computing `\(\hat{\theta}_{GMM}\)`: 2-step GMM
+
+**Step 2**
+- Using `\(\hat{W}\)` from step 1, estimate `\(\hat{\theta}_{GMM}\)`
+--
+
+- Recalculate `\(\hat{S}^{-1} = \left\{E[g(z_i; \hat{\theta}) g(z_i; \hat{\theta})^\prime]\right\}^{-1}\)`
+- Calculate `\(\hat{D} = \frac{1}{N} \sum_{i=1}^N \frac{\partial g(z_i; \hat{\theta}_{GMM})}{\partial \theta^\prime}\)`
+--
+
+- Then, calculate the asymptotic Variance-Covariance matrix `\(Var(\hat{\theta}_{GMM}) = (\hat{D}^\prime \hat{S}^{-1} \hat{D})^{-1}\)`
 
 
+---
 
+class: inverse, center, middle
+# Extra: Bootstrap
+
+---
+
+## Issues with asymptotic variance estimators
+
+- We might be interested in the standard errors or confidence intervals of some function `\(f(\hat{\theta})\)`
+
+  - One solution is to use the *Delta method*: basically, a first-order Taylor expansion of the asymptotic variance of `\(\hat{\theta}\)`
+
+--
+
+  - Another solution is to resample `\(B\)` times from the data and estimate `\(\hat{\theta}_b\)` for each resample `\(\rightarrow\)` sample from the distribution of `\(\hat{\theta}\)`. This the **bootstrap** method
+  
+--
+
+- Consistent estimators might still have large bias in finite samples
+  - Bootstrapping is also useful to adjust for this type of bias (provided that the conditions for its correctness are satisfied)
+
+---
+
+## Bootstrap: basic algorithm
+
+- Observations `\((z_1, \dots, z_N)\)` are drawn from some measure `\(P\)`, so we can form a nonparametric estimate `\(\hat{P}\)` by assuming that each observation has weight `\(1/N\)`
+
+--
+
+Basic bootstrap algorithm:
+
+1. Simulate a new sample `\(Z^* = (z^*_1, \dots, z^*_N) \sim \hat{P}\)`. This is, draw `\(n\)` values **with replacement** from our data
+  
+--
+
+2. Compute any statistic of `\(f(Z^*)\)` you would like
+  - Could be something simple, like an OLS coefficient, or complicated, like Nash equilibrium parameters
+  
+--
+
+3. Repeat 1 and 2 `\(B\)` times and calculate `\(Var(f_b)\)` or `\(CI(f_1, \dots, f_B)\)`
+
+---
+
+## Bootstrap: bias correction
+
+
+Key idea: `\(\hat{\theta}^*_1, \dots, \hat{\theta}^*_B\)` approximates the sampling distribution of `\(\hat{\theta}\)`
+
+--
+
+- We can then calculate 
+
+`$$E[\hat{\theta}^*] = \bar{\theta^*} = \frac{1}{B-1} \sum^B_{b=1}\hat{\theta}^*_b$$`
+
+---
+
+## Bootstrap: bias correction
+
+- We can use `\(\bar{\theta^*}\)` to bias correct our estimates
+  - Recall `\(\theta = E[\hat{\theta}] - Bias(\hat{\theta})\)`
+  - From bootstrap: `\(Bias_{bs}(\hat{\theta}) = \bar{\theta^*} - \hat{\theta}\)`
+
+Then, 
+`$$\hat{\theta} - Bias_{bs}(\hat{\theta}) = \hat{\theta} - (\bar{\theta^*} - \hat{\theta}) = 2\hat{\theta} - \bar{\theta^*}$$`
+--
+
+- Most nonlinear models are *consistent but biased*, especially in small samples
+  - But correcting bias is not for free: there's always the bias-variance trade-off
+
+---
+
+## Bootstrap: variance
+
+We can also use the sampled values `\(\hat{\theta}^*_1, \dots, \hat{\theta}^*_B\)` to calculate the **bootstrapped variance** of the estimator
+
+`$$Var(\hat{\theta}^*) = \frac{1}{B-1} \sum^B_{b=1}(\hat{\theta}^*_b - \bar{\theta^*})^2$$`
+
+
+---
+
+## Bootstrap: confidence intervals
+
+We can also calculate **bootstrapped confidence intervals**. There are two basic ways
+
+1. Empirical quantiles (preferred way)
+  - Sort values `\(\hat{\theta}^*_B\)` and take
+`$$CI: [\hat{\theta}^*_P{\alpha/2}, \hat{\theta}^*_P{1-\alpha/2}]$$`
+
+--
+
+2\. Asymptotically normal (relies on CLT)
+
+`$$CI: \hat{\theta} \pm 1.96 \sqrt{Var(\hat{\theta}^*)}$$`
+
+---
+
+## Bootstrap isn't magic
+
+Bootstrapped statistics are easy to program
+- But for complicated models, it can take a lot of time to resample and estimate multiple times
+  - Good thing though: this is highly parallelizable
+  
+--
+
+But bootstrapping isn't magic: it depends on asymptotic theory and will fail if you use it incorrectly
+  - If you are constructing standard errors for something that isn't asymptotically normal, it won't work
+  - It samples with replacement `\(=\)` i.i.d. But if i.i.d. does not hold in your data, it might fail (but it can be fixed in certain cases)
+
+---
+
+## Final words
+
+Here we conclude the "theoretical" part of this unit
+
+We will close this course with two interactive examples/tutorials (time permitting) to give you some hands on experience with these methods
+- A single-agent model of labor supply with taxes
+- A multiple-agent model of Nash-Bertrand competition with discrete choice consumers
+
+Stay tuned: tutorial slides and Jupyter notebooks will be uploaded to the course's repository on GitHub, with links on Brightspace
+
+
+---
+
+class: inverse, center, middle
+# Thank you!
 
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
