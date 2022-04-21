@@ -14784,7 +14784,7 @@ Program function <code>solve_c_l(w, e, gamma, tau)</code> that solves the indivi
     <span class="n">optimize!</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
     <span class="c"># Warn if error</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">termination_status</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">!=</span> <span class="n">LOCALLY_SOLVED</span><span class="p">)</span>
-        <span class="n">println</span><span class="p">(</span><span class="s">&quot;Error: row </span><span class="si">$i</span><span class="s">, draw </span><span class="si">$j</span><span class="s"> </span><span class="si">$</span><span class="p">(</span><span class="n">termination_status</span><span class="p">(</span><span class="n">model</span><span class="p">))</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="n">println</span><span class="p">(</span><span class="s">&quot;Error: $</span><span class="p">(</span><span class="n">termination_status</span><span class="p">(</span><span class="n">model</span><span class="p">))</span><span class="s">&quot;</span><span class="p">)</span>
     <span class="k">end</span>
     <span class="n">c</span> <span class="o">=</span> <span class="n">value</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
     <span class="n">l</span> <span class="o">=</span> <span class="n">value</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
