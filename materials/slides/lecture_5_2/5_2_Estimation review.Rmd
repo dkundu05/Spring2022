@@ -408,7 +408,7 @@ $$\widehat{f(\theta_0)}_{MLE} = f(\hat{\theta}_{MLE})$$
 
 The variance-covariance matrix of the MLE can be estimated using
 
-$$Var(\hat{\theta}_{MLE}) = \left\{ \left. \frac{\partial^2 l(\theta)}{\partial \theta \partial \theta^{\prime}}\right|_{\theta=\hat{\theta}_{MLE}} \right\}^{-1}$$
+$$Var(\hat{\theta}_{MLE}) = -\left\{ \left. \frac{\partial^2 l(\theta)}{\partial \theta \partial \theta^{\prime}}\right|_{\theta=\hat{\theta}_{MLE}} \right\}^{-1}$$
 So we calculate the Hessian of $l$ at the estimated parameter values.
 
 - This is the simplest variance estimator. More robust estimators exist but are beyond our scope here
@@ -739,7 +739,7 @@ We can also calculate **bootstrapped confidence intervals**. There are two basic
 
 1. Empirical quantiles (preferred way)
   - Sort values $\hat{\theta}^*_B$ and take
-$$CI: [\hat{\theta}^*_P{\alpha/2}, \hat{\theta}^*_P{1-\alpha/2}]$$
+$$CI: [\hat{\theta}^*_{\alpha/2}, \hat{\theta}^*_{1-\alpha/2}]$$
 
 --
 
